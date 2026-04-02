@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -17,11 +18,13 @@ jobs:
 
       - name: Copy files to deployment directory
         run: |
+          mkdir -p /www/wwwroot/tkiti-web-profile/backend
           rsync -av --delete \
             --exclude='data/' \
             --exclude='uploads/' \
+            --exclude='.env' \
             --no-perms --no-owner --no-group --no-times \
-            backend/ /www/wwwroot/tkiti-web-profile/ || true
+            backend/ /www/wwwroot/tkiti-web-profile/backend/
 
       - name: Retry rsync without delete
         if: failure()
@@ -29,8 +32,9 @@ jobs:
           rsync -av \
             --exclude='data/' \
             --exclude='uploads/' \
+            --exclude='.env' \
             --no-perms --no-owner --no-group --no-times \
-            backend/ /www/wwwroot/tkiti-web-profile/
+            backend/ /www/wwwroot/tkiti-web-profile/backend/
 
       - name: Fix permissions
         run: |
