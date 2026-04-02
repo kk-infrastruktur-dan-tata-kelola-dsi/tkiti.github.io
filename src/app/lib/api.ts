@@ -73,5 +73,19 @@ export async function apiRequest<T = unknown>(
 export function toAbsoluteApiUrl(path?: string | null): string | null {
   if (!path) return null
   if (/^https?:\/\//i.test(path)) return path
-  return `${API_URL}/${path.replace(/^\/+/, '')}`
+
+  const trimmed = path.trim()
+  const normalized = trimmed.replace(/^\/+/, '')
+
+  if (normalized.startsWith('uploads/')) {
+    return `${API_URL}/${normalized}`
+  }
+
+  // Some old records store only raw filename (e.g. "Screenshot 2025-08-28 161941.png")
+  // Try the most likely uploads location first so image request won't hit API 404 JSON.
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
+    return `${API_URL}/uploads/articles/${normalized}`
+  }
+
+  return `${API_URL}/${normalized}`
 }

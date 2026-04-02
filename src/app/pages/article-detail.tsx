@@ -346,17 +346,11 @@ export function ArticleDetail() {
               ),
               img: ({ node, ...props }) => (
                 <figure className="my-8">
-                  {(() => {
-                    const rawSrc = props.src as string;
-                    const resolvedSrc = toAbsoluteApiUrl(rawSrc) ?? rawSrc;
-                    return (
                   <ImageWithFallback
-                    src={resolvedSrc}
+                    src={toAbsoluteApiUrl((props.src as string) ?? null) ?? (props.src as string)}
                     alt={props.alt as string}
                     className="w-full h-auto rounded-lg"
                   />
-                    );
-                  })()}
                   {props.alt && (
                     <figcaption
                       className="text-center mt-3 text-sm"
