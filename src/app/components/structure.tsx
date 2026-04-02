@@ -6,10 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 type TeamMember = {
-  id: string;
-  name: string;
-  role: string;
+  id: string | number;
+  name?: string;
+  nama?: string;
+  role?: string;
   photo_url?: string | null;
+  photo?: string | null;
 };
 
 export function Structure() {
@@ -21,7 +23,17 @@ export function Structure() {
       try {
         const res = await apiRequest<{ success: boolean; data?: TeamMember[] }>("/struktur");
         if (res.success && res.data) {
-          setMembers(res.data);
+          const normalized = res.data.map((member) => {
+            const name = member.name ?? member.nama ?? "Anggota";
+            const photo = member.photo_url ?? member.photo ?? null;
+            return {
+              ...member,
+              name,
+              role: member.role ?? "-",
+              photo_url: photo,
+            };
+          });
+          setMembers(normalized);
         }
       } catch (e) {
         console.error("Failed to fetch structure:", e);
@@ -202,7 +214,7 @@ export function Structure() {
                         fontWeight: 600,
                       }}
                     >
-                      {member.name
+                      {(member.name ?? "Anggota")
                         .split(" ")
                         .map((n) => n[0])
                         .slice(0, 2)
@@ -218,7 +230,7 @@ export function Structure() {
                         color: "#e3e2e3",
                       }}
                     >
-                      {member.name}
+                      {member.name ?? "Anggota"}
                     </p>
                     <p
                       className="text-xs mt-1"
@@ -227,7 +239,7 @@ export function Structure() {
                         color: "#bbcac4",
                       }}
                     >
-                      {member.role}
+                      {member.role ?? "-"}
                     </p>
                   </div>
                 </motion.div>
