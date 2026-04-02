@@ -6,6 +6,13 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>High-end Landing Page Design</title>
       <script>
+        var repoSegment = window.location.pathname.split('/')[1];
+        if (window.location.hostname.endsWith('github.io') && repoSegment) {
+          var baseEl = document.createElement('base');
+          baseEl.setAttribute('href', '/' + repoSegment + '/');
+          document.head.appendChild(baseEl);
+        }
+
         // Restore path setelah redirect dari 404.html (GitHub Pages SPA routing fix)
         var redirect = sessionStorage.getItem('spa-redirect');
         if (redirect) {
