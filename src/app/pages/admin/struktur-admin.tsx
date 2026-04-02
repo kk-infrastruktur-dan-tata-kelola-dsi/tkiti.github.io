@@ -1,6 +1,8 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Pencil, Plus, Trash2, Upload, User } from 'lucide-react'
+import { Background, Controls, ReactFlow, type Edge, type Node } from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -40,6 +42,7 @@ type Anggota = {
 type TemplateNode = {
   id: number
   role: string
+  parentMasterId?: number | null
   parentRole: string | null
   urutan: number
   divisi: string | null
@@ -62,12 +65,12 @@ const EMPTY_PERIODE_FORM: PeriodeForm = { nama: '', mulai: '', selesai: '' }
 
 type MasterForm = {
   role: string
-  parentRole: string
+  parentMasterId: string
   urutan: string
   divisi: string
   single: boolean
 }
-const EMPTY_MASTER_FORM: MasterForm = { role: '', parentRole: '', urutan: '', divisi: '', single: false }
+const EMPTY_MASTER_FORM: MasterForm = { role: '', parentMasterId: '', urutan: '', divisi: '', single: false }
 
 export function AdminStruktur() {
   const [items, setItems] = useState<Anggota[]>([])
@@ -199,7 +202,7 @@ export function AdminStruktur() {
     setEditingMasterId(node.id)
     setMasterForm({
       role: node.role,
-      parentRole: node.parentRole ?? '',
+      parentMasterId: node.parentMasterId ? String(node.parentMasterId) : '',
       urutan: String(node.urutan),
       divisi: node.divisi ?? '',
       single: node.single,
@@ -222,7 +225,7 @@ export function AdminStruktur() {
       method: editingMasterId ? 'PUT' : 'POST',
       body: JSON.stringify({
         role: masterForm.role.trim(),
-        parentRole: masterForm.parentRole.trim() || null,
+        parentMasterId: masterForm.parentMasterId ? Number(masterForm.parentMasterId) : null,
         urutan,
         divisi: masterForm.divisi.trim() || null,
         single: masterForm.single,
@@ -250,6 +253,27 @@ export function AdminStruktur() {
       toast.error(res.error ?? 'Gagal menghapus master struktur')
     }
     setDeletingMasterId(null)
+  }
+
+  async function moveMasterNode(nodeId: number, parentMasterId: number | null) {
+    const node = template.find((item) => item.id === nodeId)
+    if (!node) return
+    const res = await apiRequest<TemplateNode>(`/struktur/master/${nodeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        role: node.role,
+        parentMasterId,
+        urutan: node.urutan,
+        divisi: node.divisi,
+        single: node.single,
+      }),
+    })
+    if (!res.success) {
+      toast.error(res.error ?? 'Gagal memindahkan node master')
+      return
+    }
+    await fetchData(effectivePeriodeId)
+    toast.success('Parent role diperbarui')
   }
 
   async function activatePeriode(id: number) {
@@ -357,6 +381,30 @@ export function AdminStruktur() {
     setResetting(false)
   }
 
+  const masterNodes: Node[] = useMemo(
+    () =>
+      template.map((node) => ({
+        id: String(node.id),
+        data: { label: `${node.role} (${node.single ? 'Single' : 'Multi'})` },
+        position: { x: (node.urutan - 1) * 220, y: node.parentMasterId ? 150 : 20 },
+        type: 'default',
+      })),
+    [template],
+  )
+
+  const masterEdges: Edge[] = useMemo(
+    () =>
+      template
+        .filter((node) => node.parentMasterId)
+        .map((node) => ({
+          id: `e-${node.parentMasterId}-${node.id}`,
+          source: String(node.parentMasterId),
+          target: String(node.id),
+          animated: false,
+        })),
+    [template],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -455,6 +503,23 @@ export function AdminStruktur() {
           <Button size="sm" variant="outline" onClick={openCreateMaster}>
             + Tambah Role Master
           </Button>
+        </div>
+        <div className="mb-4 h-[320px] w-full rounded border border-gray-100">
+          <ReactFlow
+            nodes={masterNodes}
+            edges={masterEdges}
+            fitView
+            onNodeDragStop={(_event, draggedNode) => {
+              const centerX = draggedNode.position.x + 100
+              const candidate = masterNodes
+                .filter((node) => node.id !== draggedNode.id)
+                .find((node) => Math.abs((node.position.x + 100) - centerX) < 80 && node.position.y < draggedNode.position.y)
+              void moveMasterNode(Number(draggedNode.id), candidate ? Number(candidate.id) : null)
+            }}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
         </div>
         <div className="grid gap-2 md:grid-cols-2">
           {template.map((node) => (
@@ -644,19 +709,20 @@ export function AdminStruktur() {
             </div>
             <div className="space-y-1.5">
               <Label>Parent Role (opsional)</Label>
-              <Input
-                list="parent-role-options"
-                value={masterForm.parentRole}
-                onChange={(e) => setMasterForm((prev) => ({ ...prev, parentRole: e.target.value }))}
-                placeholder="ROOT jika kosong"
-              />
-              <datalist id="parent-role-options">
+              <select
+                value={masterForm.parentMasterId}
+                onChange={(e) => setMasterForm((prev) => ({ ...prev, parentMasterId: e.target.value }))}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+              >
+                <option value="">ROOT</option>
                 {template
                   .filter((node) => node.id !== editingMasterId)
                   .map((node) => (
-                    <option key={node.id} value={node.role} />
+                    <option key={node.id} value={String(node.id)}>
+                      {node.role}
+                    </option>
                   ))}
-              </datalist>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">

@@ -10,6 +10,7 @@ export const strukturRoutes = new Hono()
 type MasterNode = {
   id: number
   role: string
+  parentMasterId: number | null
   parentRole: string | null
   urutan: number
   divisi: string | null
@@ -20,6 +21,7 @@ type StrukturRow = {
   id: number
   nama: string
   role: string
+  masterId: number | null
   divisi: string | null
   parentId: number | null
   periodeId: number | null
@@ -29,7 +31,7 @@ type StrukturRow = {
 
 type StrukturTreeNode = StrukturRow & { urutan: number; children: StrukturTreeNode[] }
 
-const DEFAULT_MASTER: Array<Omit<MasterNode, 'id'>> = [
+const DEFAULT_MASTER = [
   { role: 'Ketua Kelompok Keilmuan', parentRole: null, urutan: 1, divisi: 'kepemimpinan', single: true },
   { role: 'Dosen / Anggota Kelompok Keilmuan', parentRole: 'Ketua Kelompok Keilmuan', urutan: 2, divisi: 'kepemimpinan', single: false },
   { role: 'Koordinator Asisten', parentRole: 'Dosen / Anggota Kelompok Keilmuan', urutan: 3, divisi: 'anggota', single: true },
@@ -53,38 +55,6 @@ function parsePeriodeId(input: string | undefined): number | null {
   return Number.isInteger(parsed) ? parsed : null
 }
 
-function ensureMasterSeeded() {
-  const count = db.select().from(strukturMaster).all().length
-  if (count > 0) return
-  for (const row of DEFAULT_MASTER) {
-    db.insert(strukturMaster).values(row).run()
-  }
-}
-
-function getMasterRows(): MasterNode[] {
-  ensureMasterSeeded()
-  return db
-    .select()
-    .from(strukturMaster)
-    .orderBy(asc(strukturMaster.urutan), asc(strukturMaster.id))
-    .all()
-    .map((row) => ({
-      ...row,
-      single: Boolean(row.single),
-    }))
-}
-
-function getMasterByRole(role: string): MasterNode | null {
-  const target = normalizeRole(role)
-  return getMasterRows().find((row) => normalizeRole(row.role) === target) ?? null
-}
-
-function getParentMaster(role: string): MasterNode | null {
-  const me = getMasterByRole(role)
-  if (!me?.parentRole) return null
-  return getMasterByRole(me.parentRole)
-}
-
 function getLatestPeriode() {
   return db.select().from(strukturPeriode).orderBy(desc(strukturPeriode.id)).get()
 }
@@ -96,11 +66,7 @@ function getActivePeriode() {
 function ensureDefaultPeriode() {
   const latest = getLatestPeriode()
   if (latest) return latest
-  return db
-    .insert(strukturPeriode)
-    .values({ nama: 'Periode 1', isActive: true, createdAt: new Date() })
-    .returning()
-    .get()
+  return db.insert(strukturPeriode).values({ nama: 'Periode 1', isActive: true, createdAt: new Date() }).returning().get()
 }
 
 function getPeriodeOrDefault(periodeId: number | null) {
@@ -108,116 +74,125 @@ function getPeriodeOrDefault(periodeId: number | null) {
   return getLatestPeriode() ?? ensureDefaultPeriode()
 }
 
-function validateSingleRole(periodeId: number, role: string, exceptId?: number) {
-  const master = getMasterByRole(role)
-  if (!master?.single) return null
-  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
-  const duplicate = rows.find((row) => normalizeRole(row.role) === normalizeRole(role) && (exceptId ? row.id !== exceptId : true))
-  return duplicate ? `Role "${role}" hanya boleh 1 orang per periode` : null
+function fetchMasterRows(): MasterNode[] {
+  const rows = db
+    .select()
+    .from(strukturMaster)
+    .orderBy(asc(strukturMaster.urutan), asc(strukturMaster.id))
+    .all()
+    .map((row) => ({ ...row, single: Boolean(row.single) }))
+  const byId = new Map(rows.map((row) => [row.id, row]))
+  return rows.map((row) => ({
+    ...row,
+    parentRole: row.parentMasterId ? byId.get(row.parentMasterId)?.role ?? row.parentRole : null,
+  }))
 }
 
-function resolveParentId(periodeId: number, role: string, exceptId?: number): { parentId: number | null; error?: string } {
-  const parentMaster = getParentMaster(role)
-  if (!parentMaster) return { parentId: null }
-  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
-  const parent = rows.find(
-    (row) => normalizeRole(row.role) === normalizeRole(parentMaster.role) && (exceptId ? row.id !== exceptId : true),
-  )
-  if (!parent) return { parentId: null, error: `Parent role "${parentMaster.role}" harus diisi lebih dulu` }
-  return { parentId: parent.id }
+function seedMasterIfEmpty() {
+  const existing = db.select().from(strukturMaster).all()
+  if (existing.length > 0) return
+  for (const row of DEFAULT_MASTER) {
+    db.insert(strukturMaster).values({ ...row, parentMasterId: null }).run()
+  }
+}
+
+function migrateMasterToIdBased() {
+  const rows = fetchMasterRows()
+  if (rows.length === 0) return
+  const byRole = new Map(rows.map((row) => [normalizeRole(row.role), row]))
+  for (const row of rows) {
+    const parentFromRole = row.parentRole ? byRole.get(normalizeRole(row.parentRole))?.id ?? null : null
+    if (row.parentMasterId !== parentFromRole) {
+      db.update(strukturMaster).set({ parentMasterId: parentFromRole }).where(eq(strukturMaster.id, row.id)).run()
+    }
+  }
+}
+
+function ensureMasterReady() {
+  seedMasterIfEmpty()
+  migrateMasterToIdBased()
+}
+
+function getMasterRows() {
+  ensureMasterReady()
+  return fetchMasterRows()
+}
+
+function getMasterById(masterId: number | null) {
+  if (!masterId) return null
+  return getMasterRows().find((row) => row.id === masterId) ?? null
+}
+
+function getMasterByRole(role: string) {
+  return getMasterRows().find((row) => normalizeRole(row.role) === normalizeRole(role)) ?? null
 }
 
 function sortRowsByMaster(rows: StrukturRow[]) {
   const master = getMasterRows()
-  const orderMap = new Map(master.map((row) => [normalizeRole(row.role), row.urutan]))
+  const orderMap = new Map(master.map((row) => [row.id, row.urutan]))
   return [...rows].sort((a, b) => {
-    const oa = orderMap.get(normalizeRole(a.role)) ?? 9999
-    const ob = orderMap.get(normalizeRole(b.role)) ?? 9999
+    const oa = a.masterId ? orderMap.get(a.masterId) ?? 9999 : 9999
+    const ob = b.masterId ? orderMap.get(b.masterId) ?? 9999 : 9999
     return oa - ob || a.id - b.id
   })
-}
-
-function getExpectedParentId(rows: StrukturRow[], row: StrukturRow) {
-  const master = getMasterByRole(row.role)
-  if (!master?.parentRole) return null
-  const parentRole = master.parentRole
-  const candidates = rows.filter((item) => normalizeRole(item.role) === normalizeRole(parentRole))
-  if (candidates.length === 0) return null
-
-  // For "Dosen / Anggota", all dosen nodes must be direct children of Ketua (root single parent).
-  if (normalizeRole(row.role) === normalizeRole('Dosen / Anggota Kelompok Keilmuan')) {
-    const rootParent = candidates.sort((a, b) => a.id - b.id)[0]
-    return rootParent?.id ?? null
-  }
-
-  // For downstream roles, choose parent candidate that is already attached correctly by hierarchy depth.
-  const withDepth = candidates
-    .map((candidate) => {
-      let depth = 0
-      let cursor: StrukturRow | undefined = candidate
-      let guard = 0
-      while (cursor?.parentId && guard < 20) {
-        const parent = rows.find((r) => r.id === cursor!.parentId)
-        if (!parent) break
-        depth += 1
-        cursor = parent
-        guard += 1
-      }
-      return { candidate, depth }
-    })
-    .sort((a, b) => a.depth - b.depth || a.candidate.id - b.candidate.id)
-
-  return withDepth[0]?.candidate.id ?? null
 }
 
 function syncHierarchyForPeriode(periodeId: number) {
   const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all() as StrukturRow[]
   if (rows.length === 0) return rows
-
-  const rowMap = new Map<number, StrukturRow>()
-  rows.forEach((row) => rowMap.set(row.id, row))
+  const masters = getMasterRows()
+  const orderMap = new Map(masters.map((m) => [m.id, m.urutan]))
+  const memberByMaster = new Map<number, StrukturRow[]>()
+  for (const row of rows) {
+    if (!row.masterId) continue
+    const bucket = memberByMaster.get(row.masterId) ?? []
+    bucket.push(row)
+    memberByMaster.set(row.masterId, bucket)
+  }
+  const rowMap = new Map<number, StrukturRow>(rows.map((row) => [row.id, row]))
 
   for (const row of rows) {
-    const master = getMasterByRole(row.role)
-    if (!master) continue
-    const expectedParentId = getExpectedParentId(rows, row)
-    const needsUpdate =
-      row.parentId !== expectedParentId ||
-      row.urutan !== master.urutan ||
-      row.divisi !== master.divisi
-
-    if (needsUpdate) {
+    let targetMaster = row.masterId ? getMasterById(row.masterId) : null
+    if (!targetMaster) {
+      targetMaster = getMasterByRole(row.role)
+    }
+    if (!targetMaster) continue
+    const parentCandidates = targetMaster.parentMasterId ? memberByMaster.get(targetMaster.parentMasterId) ?? [] : []
+    const targetParentId = parentCandidates.length > 0 ? [...parentCandidates].sort((a, b) => a.id - b.id)[0].id : null
+    const nextUrutan = orderMap.get(targetMaster.id) ?? row.urutan ?? 9999
+    if (
+      row.masterId !== targetMaster.id ||
+      row.parentId !== targetParentId ||
+      row.urutan !== nextUrutan ||
+      row.divisi !== targetMaster.divisi ||
+      row.role !== targetMaster.role
+    ) {
       db
         .update(anggota)
         .set({
-          parentId: expectedParentId,
-          urutan: master.urutan,
-          divisi: master.divisi,
+          masterId: targetMaster.id,
+          role: targetMaster.role,
+          parentId: targetParentId,
+          urutan: nextUrutan,
+          divisi: targetMaster.divisi,
         })
         .where(eq(anggota.id, row.id))
         .run()
-
-      const updated: StrukturRow = {
+      rowMap.set(row.id, {
         ...row,
-        parentId: expectedParentId,
-        urutan: master.urutan,
-        divisi: master.divisi,
-      }
-      rowMap.set(row.id, updated)
+        masterId: targetMaster.id,
+        role: targetMaster.role,
+        parentId: targetParentId,
+        urutan: nextUrutan,
+        divisi: targetMaster.divisi,
+      })
     }
   }
-
   return sortRowsByMaster(Array.from(rowMap.values()))
 }
 
 function buildTree(rows: StrukturRow[]): StrukturTreeNode[] {
-  const master = getMasterRows()
-  const orderMap = new Map(master.map((row) => [normalizeRole(row.role), row.urutan]))
-  const sorted = sortRowsByMaster(rows).map((row) => ({
-    ...row,
-    urutan: orderMap.get(normalizeRole(row.role)) ?? row.urutan ?? 9999,
-    children: [] as StrukturTreeNode[],
-  }))
+  const sorted = sortRowsByMaster(rows).map((row) => ({ ...row, urutan: row.urutan ?? 9999, children: [] as StrukturTreeNode[] }))
   const map = new Map<number, StrukturTreeNode>()
   sorted.forEach((row) => map.set(row.id, row))
   const roots: StrukturTreeNode[] = []
@@ -233,6 +208,18 @@ function buildTree(rows: StrukturRow[]): StrukturTreeNode[] {
   return roots
 }
 
+function validateSingleRole(periodeId: number, masterId: number, exceptId?: number) {
+  const master = getMasterById(masterId)
+  if (!master?.single) return null
+  const duplicate = db
+    .select()
+    .from(anggota)
+    .where(eq(anggota.periodeId, periodeId))
+    .all()
+    .find((row) => row.masterId === masterId && (exceptId ? row.id !== exceptId : true))
+  return duplicate ? `Role "${master.role}" hanya boleh 1 orang per periode` : null
+}
+
 // Periode CRUD
 strukturRoutes.get('/periode', (c) => c.json({ success: true, data: db.select().from(strukturPeriode).orderBy(desc(strukturPeriode.id)).all() }))
 
@@ -240,11 +227,7 @@ strukturRoutes.post('/periode', authMiddleware, async (c) => {
   const payload = await c.req.json<{ nama?: string; mulai?: string; selesai?: string }>().catch(() => null)
   const nama = payload?.nama?.trim() ?? ''
   if (!nama) return c.json({ success: false, error: 'Nama periode wajib diisi' }, 400)
-  const inserted = db
-    .insert(strukturPeriode)
-    .values({ nama, mulai: payload?.mulai?.trim() || null, selesai: payload?.selesai?.trim() || null, isActive: false, createdAt: new Date() })
-    .returning()
-    .get()
+  const inserted = db.insert(strukturPeriode).values({ nama, mulai: payload?.mulai?.trim() || null, selesai: payload?.selesai?.trim() || null, isActive: false, createdAt: new Date() }).returning().get()
   return c.json({ success: true, data: inserted }, 201)
 })
 
@@ -256,12 +239,7 @@ strukturRoutes.put('/periode/:id', authMiddleware, async (c) => {
   const payload = await c.req.json<{ nama?: string; mulai?: string; selesai?: string }>().catch(() => null)
   const nama = payload?.nama?.trim() ?? ''
   if (!nama) return c.json({ success: false, error: 'Nama periode wajib diisi' }, 400)
-  const updated = db
-    .update(strukturPeriode)
-    .set({ nama, mulai: payload?.mulai?.trim() || null, selesai: payload?.selesai?.trim() || null })
-    .where(eq(strukturPeriode.id, id))
-    .returning()
-    .get()
+  const updated = db.update(strukturPeriode).set({ nama, mulai: payload?.mulai?.trim() || null, selesai: payload?.selesai?.trim() || null }).where(eq(strukturPeriode.id, id)).returning().get()
   return c.json({ success: true, data: updated })
 })
 
@@ -283,9 +261,7 @@ strukturRoutes.delete('/periode/:id', authMiddleware, async (c) => {
   const found = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, id)).get()
   if (!found) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
   const rows = db.select().from(anggota).where(eq(anggota.periodeId, id)).all()
-  for (const row of rows) {
-    if (row.photo) await deleteFile(row.photo)
-  }
+  for (const row of rows) if (row.photo) await deleteFile(row.photo)
   db.transaction((tx) => {
     tx.delete(anggota).where(eq(anggota.periodeId, id)).run()
     tx.delete(strukturPeriode).where(eq(strukturPeriode.id, id)).run()
@@ -302,25 +278,33 @@ strukturRoutes.delete('/periode/:id', authMiddleware, async (c) => {
 strukturRoutes.get('/master', (c) => c.json({ success: true, data: getMasterRows() }))
 
 strukturRoutes.post('/master', authMiddleware, async (c) => {
-  const payload = await c.req.json<{ role?: string; parentRole?: string | null; urutan?: number; divisi?: string | null; single?: boolean }>().catch(() => null)
+  const payload = await c.req
+    .json<{ role?: string; parentMasterId?: number | null; parentRole?: string | null; urutan?: number; divisi?: string | null; single?: boolean }>()
+    .catch(() => null)
   const role = payload?.role?.trim() ?? ''
   if (!role) return c.json({ success: false, error: 'Role wajib diisi' }, 400)
-  const existing = getMasterByRole(role)
-  if (existing) return c.json({ success: false, error: 'Role master sudah ada' }, 409)
-  if (payload?.parentRole && normalizeRole(payload.parentRole) === normalizeRole(role)) {
-    return c.json({ success: false, error: 'Parent role tidak boleh sama dengan role' }, 400)
-  }
+  const duplicate = getMasterRows().find((row) => normalizeRole(row.role) === normalizeRole(role))
+  if (duplicate) return c.json({ success: false, error: 'Role master sudah ada' }, 409)
+  const parentMasterId =
+    Number.isInteger(payload?.parentMasterId)
+      ? payload!.parentMasterId!
+      : payload?.parentRole
+        ? getMasterByRole(payload.parentRole)?.id ?? null
+        : null
+  if (Number.isInteger(parentMasterId) && parentMasterId === 0) return c.json({ success: false, error: 'parentMasterId tidak valid' }, 400)
   const inserted = db
     .insert(strukturMaster)
     .values({
       role,
-      parentRole: payload?.parentRole?.trim() || null,
+      parentMasterId,
+      parentRole: null,
       urutan: Number.isInteger(payload?.urutan) ? Number(payload!.urutan) : getMasterRows().length + 1,
       divisi: payload?.divisi?.trim() || null,
       single: Boolean(payload?.single),
     })
     .returning()
     .get()
+  migrateMasterToIdBased()
   return c.json({ success: true, data: inserted }, 201)
 })
 
@@ -329,20 +313,26 @@ strukturRoutes.put('/master/:id', authMiddleware, async (c) => {
   if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID master tidak valid' }, 400)
   const found = db.select().from(strukturMaster).where(eq(strukturMaster.id, id)).get()
   if (!found) return c.json({ success: false, error: 'Master role tidak ditemukan' }, 404)
-  const payload = await c.req.json<{ role?: string; parentRole?: string | null; urutan?: number; divisi?: string | null; single?: boolean }>().catch(() => null)
+  const payload = await c.req
+    .json<{ role?: string; parentMasterId?: number | null; parentRole?: string | null; urutan?: number; divisi?: string | null; single?: boolean }>()
+    .catch(() => null)
   const role = payload?.role?.trim() ?? found.role
-  const parentRole = payload?.parentRole?.trim() || null
   if (!role) return c.json({ success: false, error: 'Role wajib diisi' }, 400)
-  if (parentRole && normalizeRole(parentRole) === normalizeRole(role)) return c.json({ success: false, error: 'Parent role tidak boleh sama' }, 400)
-
+  const parentMasterId =
+    Number.isInteger(payload?.parentMasterId)
+      ? payload!.parentMasterId!
+      : payload?.parentRole
+        ? getMasterByRole(payload.parentRole)?.id ?? null
+        : null
+  if (Number.isInteger(parentMasterId) && parentMasterId === id) return c.json({ success: false, error: 'Parent tidak boleh sama' }, 400)
   const duplicate = getMasterRows().find((row) => normalizeRole(row.role) === normalizeRole(role) && row.id !== id)
   if (duplicate) return c.json({ success: false, error: 'Role master sudah ada' }, 409)
-
   const updated = db
     .update(strukturMaster)
     .set({
       role,
-      parentRole,
+      parentMasterId,
+      parentRole: null,
       urutan: Number.isInteger(payload?.urutan) ? Number(payload!.urutan) : found.urutan,
       divisi: payload?.divisi?.trim() || null,
       single: typeof payload?.single === 'boolean' ? payload.single : found.single,
@@ -351,11 +341,11 @@ strukturRoutes.put('/master/:id', authMiddleware, async (c) => {
     .returning()
     .get()
 
-  const affectedMembers = db.select().from(anggota).where(eq(anggota.role, found.role)).all()
-  for (const member of affectedMembers) {
-    db.update(anggota).set({ role: updated.role, divisi: updated.divisi, urutan: updated.urutan }).where(eq(anggota.id, member.id)).run()
+  const memberRows = db.select().from(anggota).where(eq(anggota.masterId, id)).all()
+  for (const row of memberRows) {
+    db.update(anggota).set({ role: updated.role, urutan: updated.urutan, divisi: updated.divisi }).where(eq(anggota.id, row.id)).run()
   }
-
+  migrateMasterToIdBased()
   return c.json({ success: true, data: updated })
 })
 
@@ -364,15 +354,15 @@ strukturRoutes.delete('/master/:id', authMiddleware, (c) => {
   if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID master tidak valid' }, 400)
   const found = db.select().from(strukturMaster).where(eq(strukturMaster.id, id)).get()
   if (!found) return c.json({ success: false, error: 'Master role tidak ditemukan' }, 404)
-  const hasChildrenMaster = db.select().from(strukturMaster).where(eq(strukturMaster.parentRole, found.role)).get()
+  const hasChildrenMaster = db.select().from(strukturMaster).where(eq(strukturMaster.parentMasterId, id)).get()
   if (hasChildrenMaster) return c.json({ success: false, error: 'Role master masih punya child role' }, 400)
-  const hasMembers = db.select().from(anggota).where(eq(anggota.role, found.role)).get()
+  const hasMembers = db.select().from(anggota).where(eq(anggota.masterId, id)).get()
   if (hasMembers) return c.json({ success: false, error: 'Role master masih dipakai anggota' }, 400)
   db.delete(strukturMaster).where(eq(strukturMaster.id, id)).run()
   return c.json({ success: true, message: 'Role master berhasil dihapus' })
 })
 
-// Compatibility template endpoint
+// Compatibility endpoint
 strukturRoutes.get('/template', (c) => c.json({ success: true, data: getMasterRows() }))
 
 // Struktur by periode
@@ -380,12 +370,7 @@ strukturRoutes.get('/', (c) => {
   const periode = getPeriodeOrDefault(parsePeriodeId(c.req.query('periodeId')))
   if (!periode) return c.json({ success: true, data: [], tree: [], meta: { periodeId: null } })
   const rows = syncHierarchyForPeriode(periode.id)
-  return c.json({
-    success: true,
-    data: rows,
-    tree: buildTree(rows),
-    meta: { periodeId: periode.id, activePeriodeId: getActivePeriode()?.id ?? null },
-  })
+  return c.json({ success: true, data: rows, tree: buildTree(rows), meta: { periodeId: periode.id, activePeriodeId: getActivePeriode()?.id ?? null } })
 })
 
 // Anggota CRUD
@@ -403,10 +388,14 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
   if (!periode) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 400)
   const master = getMasterByRole(role)
   if (!master) return c.json({ success: false, error: 'Role tidak ada dalam struktur master' }, 400)
-  const singleError = validateSingleRole(periode.id, master.role)
+  const singleError = validateSingleRole(periode.id, master.id)
   if (singleError) return c.json({ success: false, error: singleError }, 409)
-  const { parentId, error } = resolveParentId(periode.id, master.role)
-  if (error) return c.json({ success: false, error }, 400)
+  const parentCandidates = master.parentMasterId ? db.select().from(anggota).where(and(eq(anggota.periodeId, periode.id), eq(anggota.masterId, master.parentMasterId))).all() : []
+  const parentId = parentCandidates.length > 0 ? [...parentCandidates].sort((a, b) => a.id - b.id)[0].id : null
+  if (master.parentMasterId && !parentId) {
+    const parentMaster = getMasterById(master.parentMasterId)
+    return c.json({ success: false, error: `Parent role "${parentMaster?.role ?? 'Unknown'}" harus diisi lebih dulu` }, 400)
+  }
   let photo: string | null = null
   const photoFile = body['photo']
   if (photoFile instanceof File) {
@@ -416,7 +405,16 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
   }
   const inserted = db
     .insert(anggota)
-    .values({ nama, role: master.role, divisi: master.divisi, photo, urutan: master.urutan, parentId, periodeId: periode.id })
+    .values({
+      nama,
+      role: master.role,
+      masterId: master.id,
+      divisi: master.divisi,
+      photo,
+      urutan: master.urutan,
+      parentId,
+      periodeId: periode.id,
+    })
     .returning()
     .get()
   syncHierarchyForPeriode(periode.id)
@@ -440,10 +438,14 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
   const periodeId = existing.periodeId ?? ensureDefaultPeriode().id
   const master = getMasterByRole(nextRole)
   if (!master) return c.json({ success: false, error: 'Role tidak ada dalam struktur master' }, 400)
-  const singleError = validateSingleRole(periodeId, master.role, id)
+  const singleError = validateSingleRole(periodeId, master.id, id)
   if (singleError) return c.json({ success: false, error: singleError }, 409)
-  const { parentId, error } = resolveParentId(periodeId, master.role, id)
-  if (error) return c.json({ success: false, error }, 400)
+  const parentCandidates = master.parentMasterId ? db.select().from(anggota).where(and(eq(anggota.periodeId, periodeId), eq(anggota.masterId, master.parentMasterId))).all() : []
+  const parentId = parentCandidates.length > 0 ? [...parentCandidates].sort((a, b) => a.id - b.id)[0].id : null
+  if (master.parentMasterId && !parentId) {
+    const parentMaster = getMasterById(master.parentMasterId)
+    return c.json({ success: false, error: `Parent role "${parentMaster?.role ?? 'Unknown'}" harus diisi lebih dulu` }, 400)
+  }
   let photo = existing.photo
   const photoFile = body['photo']
   if (photoFile instanceof File) {
@@ -454,7 +456,7 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
   }
   const updated = db
     .update(anggota)
-    .set({ nama: nextNama, role: master.role, divisi: master.divisi, parentId, urutan: master.urutan, photo })
+    .set({ nama: nextNama, role: master.role, masterId: master.id, divisi: master.divisi, parentId, urutan: master.urutan, photo })
     .where(eq(anggota.id, id))
     .returning()
     .get()

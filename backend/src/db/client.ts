@@ -31,6 +31,7 @@ sqlite.exec(`
     id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
     nama text NOT NULL,
     role text NOT NULL,
+    master_id integer,
     divisi text,
     photo text,
     periode_id integer,
@@ -50,6 +51,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS struktur_master (
     id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
     role text NOT NULL UNIQUE,
+    parent_master_id integer,
     parent_role text,
     urutan integer NOT NULL,
     divisi text,
@@ -108,6 +110,9 @@ if (!anggotaColumns.some((col) => col.name === 'periode_id')) {
 if (!anggotaColumns.some((col) => col.name === 'parent_id')) {
   sqlite.exec(`ALTER TABLE anggota ADD COLUMN parent_id integer;`)
 }
+if (!anggotaColumns.some((col) => col.name === 'master_id')) {
+  sqlite.exec(`ALTER TABLE anggota ADD COLUMN master_id integer;`)
+}
 if (masterColumns.length === 0) {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS struktur_master (
@@ -122,6 +127,9 @@ if (masterColumns.length === 0) {
 }
 if (!masterColumns.some((col) => col.name === 'single')) {
   sqlite.exec(`ALTER TABLE struktur_master ADD COLUMN single integer DEFAULT 0;`)
+}
+if (!masterColumns.some((col) => col.name === 'parent_master_id')) {
+  sqlite.exec(`ALTER TABLE struktur_master ADD COLUMN parent_master_id integer;`)
 }
 
 export const db = drizzle(sqlite, { schema })

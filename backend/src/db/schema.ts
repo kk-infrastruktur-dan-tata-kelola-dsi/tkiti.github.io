@@ -14,6 +14,7 @@ export const anggota = sqliteTable('anggota', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   nama: text('nama').notNull(),
   role: text('role').notNull(),
+  masterId: integer('master_id'),
   divisi: text('divisi'),   // 'kepemimpinan' | 'anggota' | 'kolaborasi'
   photo: text('photo'),     // path relatif dari /uploads/
   periodeId: integer('periode_id'),
@@ -33,6 +34,7 @@ export const strukturPeriode = sqliteTable('struktur_periode', {
 export const strukturMaster = sqliteTable('struktur_master', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   role: text('role').notNull().unique(),
+  parentMasterId: integer('parent_master_id'),
   parentRole: text('parent_role'),
   urutan: integer('urutan').notNull(),
   divisi: text('divisi'),
