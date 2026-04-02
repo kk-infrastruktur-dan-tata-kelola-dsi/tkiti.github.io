@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -11,6 +11,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { SEO } from "../components/seo";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 import "highlight.js/styles/atom-one-dark.css";
 
@@ -404,10 +405,149 @@ export function ArticleDetail() {
           <div className="lg:hidden">
             <LikeButton articleId={article.id} initialLikes={article.likes} />
           </div>
-          <ShareButton title={article.title} />
+          <ShareButton title={article.title} description={article.subtitle || article.excerpt || undefined} />
+        </div>
+
+        {/* Author Card */}
+        <div
+          className="flex items-start gap-4 p-6 rounded-xl my-8"
+          style={{
+            background: "rgba(62, 207, 178, 0.05)",
+            border: "1px solid rgba(62, 207, 178, 0.15)",
+          }}
+        >
+          <Avatar className="w-14 h-14 border flex-shrink-0" style={{ borderColor: "rgba(62, 207, 178, 0.3)" }}>
+            <AvatarImage src={authorAvatar || undefined} alt={authorName} crossOrigin="anonymous" />
+            <AvatarFallback
+              style={{
+                background: "rgba(62, 207, 178, 0.15)",
+                color: "rgb(62, 207, 178)",
+                fontFamily: "Space Grotesk, sans-serif",
+                fontSize: "18px",
+                fontWeight: 600,
+              }}
+            >
+              {String(authorName).split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "#889994", fontFamily: "JetBrains Mono, monospace" }}>
+              Ditulis oleh
+            </p>
+            <p className="font-semibold text-lg" style={{ color: "#e3e2e3", fontFamily: "Space Grotesk, sans-serif" }}>
+              {authorName}
+            </p>
+            <p className="text-sm mt-1" style={{ color: "#889994" }}>
+              Laboratorium TKITI — Departemen Sistem Informasi, Universitas Andalas
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* More Articles Section */}
+      <MoreArticles currentSlug={article.slug} />
+
+      {/* Minimal Article Footer */}
+      <footer
+        className="border-t mt-16"
+        style={{ borderColor: "rgba(62, 207, 178, 0.1)" }}
+      >
+        <div className="max-w-[680px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link
+            to="/"
+            className="font-bold tracking-[0.3em] hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "20px", color: "#3ECFB2" }}
+          >
+            TKITI
+          </Link>
+          <p
+            className="text-center sm:text-right"
+            style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "11px", color: "rgba(227, 226, 227, 0.35)" }}
+          >
+            Laboratorium Tata Kelola & Infrastruktur TI
+          </p>
+        </div>
+      </footer>
     </article>
     </>
+  );
+}
+
+function MoreArticles({ currentSlug }: { currentSlug: string }) {
+  const [articles, setArticles] = useState<Article[]>([]);
+
+  useEffect(() => {
+    async function fetch() {
+      try {
+        const res = await apiRequest<{ success: boolean; data?: Article[] }>("/articles");
+        if (res.success && res.data) {
+          setArticles(res.data.filter((a) => a.slug !== currentSlug).slice(0, 3));
+        }
+      } catch {
+        // silent
+      }
+    }
+    fetch();
+  }, [currentSlug]);
+
+  if (articles.length === 0) return null;
+
+  return (
+    <div className="max-w-4xl mx-auto px-6 mt-16">
+      <div className="flex items-center justify-between mb-8">
+        <h2
+          className="font-bold"
+          style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "24px", color: "#e3e2e3" }}
+        >
+          Artikel Lainnya
+        </h2>
+        <Link
+          to="/article"
+          className="flex items-center gap-1 text-sm hover:gap-2 transition-all"
+          style={{ color: "#3ECFB2", fontFamily: "JetBrains Mono, monospace", fontSize: "13px" }}
+        >
+          Semua artikel <ChevronRight size={14} />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {articles.map((a) => {
+          const thumb = toAbsoluteApiUrl(a.thumbnail_url ?? a.thumbnail ?? null);
+          const date = a.published_at ?? a.createdAt ?? new Date().toISOString();
+          const time = calculateReadingTime(a.content ?? "");
+          return (
+            <Link
+              key={a.id}
+              to={`/article/${a.slug}`}
+              className="group block rounded-xl overflow-hidden border hover:border-[rgba(62,207,178,0.35)] transition-colors"
+              style={{ background: "rgba(13, 14, 15, 0.6)", borderColor: "rgba(62, 207, 178, 0.15)" }}
+            >
+              {thumb && (
+                <div className="h-36 overflow-hidden">
+                  <ImageWithFallback
+                    src={thumb}
+                    alt={a.title}
+                    className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-500"
+                  />
+                </div>
+              )}
+              <div className="p-4">
+                <h3
+                  className="font-semibold line-clamp-2 mb-2 group-hover:text-[rgb(62,207,178)] transition-colors"
+                  style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "16px", color: "#e3e2e3", lineHeight: 1.4 }}
+                >
+                  {a.title}
+                </h3>
+                <p
+                  className="text-xs"
+                  style={{ color: "#889994", fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  {formatDate(date)} · {time} min baca
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }

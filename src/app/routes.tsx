@@ -17,38 +17,38 @@ const isGitHubPagesHost = window.location.hostname.endsWith("github.io");
 const repoSegment = window.location.pathname.split("/")[1];
 const basename = isGitHubPagesHost && repoSegment ? `/${repoSegment}` : "/";
 
-function Layout({ children }: { children: React.ReactNode }) {
+function BaseShell({ children }: { children: React.ReactNode }) {
   return (
-    <div 
-      className="relative min-h-screen overflow-x-hidden selection:bg-[#3ECFB2] selection:text-[#00382e]" 
-      style={{ 
-        backgroundColor: '#070809', 
-        color: '#e3e2e3', 
-        fontFamily: "'DM Sans', sans-serif" 
+    <div
+      className="relative min-h-screen overflow-x-hidden selection:bg-[#3ECFB2] selection:text-[#00382e]"
+      style={{
+        backgroundColor: '#070809',
+        color: '#e3e2e3',
+        fontFamily: "'DM Sans', sans-serif"
       }}
     >
       {/* Scanline Effect */}
-      <div 
+      <div
         className="fixed inset-0 pointer-events-none z-[9999] opacity-[0.02]"
         style={{
           background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))',
           backgroundSize: '100% 2px, 3px 100%',
         }}
       />
-      
+
       {/* Background Blobs */}
-      <div 
+      <div
         className="fixed w-[500px] h-[500px] rounded-full opacity-40 blur-[120px] pointer-events-none"
-        style={{ 
+        style={{
           background: 'rgba(62, 207, 178, 0.2)',
           top: '-10%',
           right: '-5%',
           zIndex: -1,
         }}
       />
-      <div 
+      <div
         className="fixed w-[600px] h-[600px] rounded-full opacity-40 blur-[120px] pointer-events-none"
-        style={{ 
+        style={{
           background: 'rgba(57, 73, 83, 0.3)',
           bottom: '10%',
           left: '-10%',
@@ -58,8 +58,24 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       <Navigation />
       {children}
-      <Footer />
     </div>
+  );
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <BaseShell>
+      {children}
+      <Footer />
+    </BaseShell>
+  );
+}
+
+function ArticleLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <BaseShell>
+      {children}
+    </BaseShell>
   );
 }
 
@@ -71,11 +87,11 @@ export const router = createBrowserRouter(
     },
     {
       path: "/article",
-      element: <Layout><Articles /></Layout>,
+      element: <ArticleLayout><Articles /></ArticleLayout>,
     },
     {
       path: "/article/:slug",
-      element: <Layout><ArticleDetail /></Layout>,
+      element: <ArticleLayout><ArticleDetail /></ArticleLayout>,
     },
     {
       path: "/sejarah",

@@ -58,7 +58,12 @@ export function Navigation() {
       "/kontak": "kontak",
     };
     const sectionFromPath = pathSectionMap[location.pathname];
-    if (sectionFromPath) setActiveSection(sectionFromPath);
+    if (sectionFromPath) {
+      setActiveSection(sectionFromPath);
+    } else if (location.pathname !== "/") {
+      // Clear stale section highlight on non-home pages (e.g. /article)
+      setActiveSection("");
+    }
 
     if (location.pathname !== "/") return;
     const sections = navItems

@@ -1,14 +1,20 @@
 import { Share2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { SITE_URL } from "../lib/api";
 
 interface ShareButtonProps {
   title: string;
   url?: string;
+  description?: string;
 }
 
-export function ShareButton({ title, url }: ShareButtonProps) {
-  const shareUrl = url || window.location.href;
+export function ShareButton({ title, url, description }: ShareButtonProps) {
+  // Always build an absolute URL so shared links include the domain and OG tags render thumbnails
+  const pathname = url || window.location.pathname;
+  const shareUrl = pathname.startsWith("http") ? pathname : `${SITE_URL}${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
+
+  const shareText = description ? `${title}\n${description}` : title;
 
   async function handleShare() {
     // Try native share first (mobile)
@@ -16,6 +22,7 @@ export function ShareButton({ title, url }: ShareButtonProps) {
       try {
         await navigator.share({
           title,
+          text: description || undefined,
           url: shareUrl,
         });
         return;
@@ -34,7 +41,7 @@ export function ShareButton({ title, url }: ShareButtonProps) {
   }
 
   function handleWhatsApp() {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(title + "\n" + shareUrl)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`;
     window.open(whatsappUrl, "_blank");
   }
 

@@ -5,7 +5,7 @@ import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { Heart } from "lucide-react";
+import { Heart, ArrowLeft } from "lucide-react";
 import { SEO } from "../components/seo";
 
 type Article = {
@@ -319,6 +319,28 @@ export function Articles() {
           </div>
         )}
       </div>
+
+      {/* Minimal Article Footer */}
+      <footer
+        className="border-t mt-16"
+        style={{ borderColor: "rgba(62, 207, 178, 0.1)" }}
+      >
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link
+            to="/"
+            className="font-bold tracking-[0.3em] hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "20px", color: "#3ECFB2" }}
+          >
+            TKITI
+          </Link>
+          <p
+            className="text-center sm:text-right"
+            style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "11px", color: "rgba(227, 226, 227, 0.35)" }}
+          >
+            Laboratorium Tata Kelola & Infrastruktur TI
+          </p>
+        </div>
+      </footer>
     </main>
     </>
   );
