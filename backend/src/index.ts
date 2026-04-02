@@ -28,6 +28,13 @@ app.use(
 // Foto upload tersedia di /uploads/gallery/... dan /uploads/struktur/...
 // root relatif terhadap process.cwd() → /app di Docker
 app.use('/uploads/*', serveStatic({ root: './' }))
+// Compatibility fallback: old records may store bare filenames without "uploads/articles/" prefix.
+app.use('/*.jpg', serveStatic({ root: './uploads/articles' }))
+app.use('/*.jpeg', serveStatic({ root: './uploads/articles' }))
+app.use('/*.png', serveStatic({ root: './uploads/articles' }))
+app.use('/*.webp', serveStatic({ root: './uploads/articles' }))
+app.use('/*.gif', serveStatic({ root: './uploads/articles' }))
+app.use('/*.svg', serveStatic({ root: './uploads/articles' }))
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (c) => c.json({ status: 'ok' }))

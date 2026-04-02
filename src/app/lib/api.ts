@@ -86,9 +86,9 @@ export function toAbsoluteApiUrl(path?: string | null): string | null {
   }
 
   // Some legacy records store only a bare filename (e.g. "Screenshot 2025-08-28 161941.png")
-  // Route these directly to uploads path to avoid hitting API root and getting JSON 404.
+  // Keep URL at API root because backend now exposes compatibility static mapping for root filenames.
   if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
-    return `${API_URL}/uploads/articles/${encoded}`
+    return `${API_URL}/${encoded}`
   }
 
   return `${API_URL}/${encoded}`
