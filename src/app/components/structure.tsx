@@ -16,11 +16,8 @@ type TeamMember = {
   urutan: number | null;
 };
 
-type TemplateNode = {
-  role: string;
-  parentRole: string | null;
-  urutan: number;
-  divisi: string | null;
+type TeamTreeNode = TeamMember & {
+  children: TeamTreeNode[];
 };
 
 type Periode = {
@@ -31,57 +28,7 @@ type Periode = {
   isActive: boolean;
 };
 
-type FamilyNode = {
-  role: string;
-  nama: string;
-  photo: string | null;
-  urutan: number;
-  children: FamilyNode[];
-};
-
-function normalizeRole(role: string): string {
-  return role.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function buildFamilyTree(members: TeamMember[], template: TemplateNode[]): FamilyNode[] {
-  const memberByRole = new Map<string, TeamMember>();
-  for (const member of members) {
-    memberByRole.set(normalizeRole(member.role), member);
-  }
-
-  const nodeByRole = new Map<string, FamilyNode>();
-  for (const t of template) {
-    const member = memberByRole.get(normalizeRole(t.role));
-    nodeByRole.set(normalizeRole(t.role), {
-      role: t.role,
-      nama: member?.nama ?? "Belum diisi",
-      photo: member?.photo ?? null,
-      urutan: t.urutan,
-      children: [],
-    });
-  }
-
-  const roots: FamilyNode[] = [];
-  for (const t of template) {
-    const node = nodeByRole.get(normalizeRole(t.role));
-    if (!node) continue;
-    if (!t.parentRole) {
-      roots.push(node);
-      continue;
-    }
-    const parent = nodeByRole.get(normalizeRole(t.parentRole));
-    if (parent) parent.children.push(node);
-  }
-
-  const sortDeep = (nodes: FamilyNode[]) => {
-    nodes.sort((a, b) => a.urutan - b.urutan);
-    nodes.forEach((n) => sortDeep(n.children));
-  };
-  sortDeep(roots);
-  return roots;
-}
-
-function FamilyTreeNode({ node, compact = false }: { node: FamilyNode; compact?: boolean }) {
+function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact?: boolean }) {
   const initials = node.nama
     .split(" ")
     .map((part) => part[0])
@@ -152,8 +99,7 @@ function FamilyTreeNode({ node, compact = false }: { node: FamilyNode; compact?:
 }
 
 export function Structure() {
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [template, setTemplate] = useState<TemplateNode[]>([]);
+  const [tree, setTree] = useState<TeamTreeNode[]>([]);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,23 +107,21 @@ export function Structure() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resPeriode, resTemplate] = await Promise.all([
+        const [resPeriode] = await Promise.all([
           apiRequest<{ success: boolean; data?: Periode[] }>("/struktur/periode"),
-          apiRequest<{ success: boolean; data?: TemplateNode[] }>("/struktur/template"),
         ]);
         const periodeList = resPeriode.success && resPeriode.data ? resPeriode.data : [];
         const activePeriode = periodeList.find((p) => p.isActive) ?? periodeList[0] ?? null;
         const initialPeriodeId = activePeriode?.id ?? null;
 
-        if (resTemplate.success && resTemplate.data) setTemplate(resTemplate.data);
         setPeriodes(periodeList);
         setSelectedPeriodeId(initialPeriodeId);
 
         if (initialPeriodeId) {
-          const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[] }>(`/struktur?periodeId=${initialPeriodeId}`);
-          if (resMembers.success && resMembers.data) setMembers(resMembers.data);
+          const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] }>(`/struktur?periodeId=${initialPeriodeId}`);
+          if (resMembers.success && resMembers.tree) setTree(resMembers.tree);
         } else {
-          setMembers([]);
+          setTree([]);
         }
       } catch (error) {
         console.error("Failed to fetch structure:", error);
@@ -191,11 +135,11 @@ export function Structure() {
 
   async function onChangePeriode(periodeId: number) {
     setSelectedPeriodeId(periodeId);
-    const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[] }>(`/struktur?periodeId=${periodeId}`);
-    if (resMembers.success && resMembers.data) setMembers(resMembers.data);
+    const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] }>(`/struktur?periodeId=${periodeId}`);
+    if (resMembers.success && resMembers.tree) setTree(resMembers.tree);
   }
 
-  const familyTree = useMemo(() => buildFamilyTree(members, template), [members, template]);
+  const familyTree = useMemo(() => tree, [tree]);
 
   const compactTree = familyTree.length > 0 && familyTree[0].children.length > 4;
 

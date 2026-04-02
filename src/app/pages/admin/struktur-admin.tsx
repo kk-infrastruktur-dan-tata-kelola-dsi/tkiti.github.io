@@ -66,6 +66,7 @@ export function AdminStruktur() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [periodeDialogOpen, setPeriodeDialogOpen] = useState(false)
+  const [editingPeriodeId, setEditingPeriodeId] = useState<number | null>(null)
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [periodeForm, setPeriodeForm] = useState<PeriodeForm>(EMPTY_PERIODE_FORM)
@@ -73,6 +74,7 @@ export function AdminStruktur() {
   const [photoPreview, setPhotoPreview] = useState('')
   const [saving, setSaving] = useState(false)
   const [creatingPeriode, setCreatingPeriode] = useState(false)
+  const [deletingPeriodeId, setDeletingPeriodeId] = useState<number | null>(null)
   const [activatingPeriodeId, setActivatingPeriodeId] = useState<number | null>(null)
   const [resetting, setResetting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -116,14 +118,14 @@ export function AdminStruktur() {
     if (resItems.success && resItems.data) setItems(resItems.data)
   }
 
-  async function createPeriode() {
+  async function submitPeriode() {
     if (!periodeForm.nama.trim()) {
       toast.error('Nama periode wajib diisi')
       return
     }
     setCreatingPeriode(true)
-    const res = await apiRequest<Periode>('/struktur/periode', {
-      method: 'POST',
+    const res = await apiRequest<Periode>(editingPeriodeId ? `/struktur/periode/${editingPeriodeId}` : '/struktur/periode', {
+      method: editingPeriodeId ? 'PUT' : 'POST',
       body: JSON.stringify({
         nama: periodeForm.nama.trim(),
         mulai: periodeForm.mulai || null,
@@ -131,14 +133,44 @@ export function AdminStruktur() {
       }),
     })
     if (res.success && res.data) {
-      toast.success('Periode berhasil dibuat')
+      toast.success(editingPeriodeId ? 'Periode berhasil diperbarui' : 'Periode berhasil dibuat')
       setPeriodeDialogOpen(false)
+      setEditingPeriodeId(null)
       setPeriodeForm(EMPTY_PERIODE_FORM)
       await fetchData(res.data.id)
     } else {
-      toast.error(res.error ?? 'Gagal membuat periode')
+      toast.error(res.error ?? 'Gagal menyimpan periode')
     }
     setCreatingPeriode(false)
+  }
+
+  function openCreatePeriode() {
+    setEditingPeriodeId(null)
+    setPeriodeForm(EMPTY_PERIODE_FORM)
+    setPeriodeDialogOpen(true)
+  }
+
+  function openEditPeriode(periode: Periode) {
+    setEditingPeriodeId(periode.id)
+    setPeriodeForm({
+      nama: periode.nama,
+      mulai: periode.mulai ?? '',
+      selesai: periode.selesai ?? '',
+    })
+    setPeriodeDialogOpen(true)
+  }
+
+  async function deletePeriode(id: number) {
+    setDeletingPeriodeId(id)
+    const res = await apiRequest(`/struktur/periode/${id}`, { method: 'DELETE' })
+    if (res.success) {
+      toast.success('Periode berhasil dihapus')
+      if (selectedPeriodeId === id) setSelectedPeriodeId(null)
+      await fetchData(null)
+    } else {
+      toast.error(res.error ?? 'Gagal menghapus periode')
+    }
+    setDeletingPeriodeId(null)
   }
 
   async function activatePeriode(id: number) {
@@ -254,7 +286,7 @@ export function AdminStruktur() {
           <p className="mt-0.5 text-sm text-gray-500">Pilih periode, atur mana yang aktif, lalu isi nama per role template.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setPeriodeDialogOpen(true)}>
+          <Button variant="outline" onClick={openCreatePeriode}>
             + Buat Periode
           </Button>
           <AlertDialog>
@@ -302,11 +334,35 @@ export function AdminStruktur() {
                 </button>
                 <div className="flex items-center gap-2">
                   {periode.isActive ? <Badge>Aktif</Badge> : <Badge variant="secondary">Arsip</Badge>}
+                  <Button size="sm" variant="outline" onClick={() => openEditPeriode(periode)}>
+                    Edit
+                  </Button>
                   {!periode.isActive && (
                     <Button size="sm" variant="outline" disabled={activatingPeriodeId === periode.id} onClick={() => activatePeriode(periode.id)}>
                       {activatingPeriodeId === periode.id ? 'Mengaktifkan...' : 'Jadikan Aktif'}
                     </Button>
                   )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-red-600" disabled={deletingPeriodeId === periode.id}>
+                        {deletingPeriodeId === periode.id ? 'Menghapus...' : 'Hapus'}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus periode ini?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Semua data struktur pada periode "{periode.nama}" akan ikut terhapus.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={() => deletePeriode(periode.id)}>
+                          Hapus
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))
@@ -431,7 +487,7 @@ export function AdminStruktur() {
       <Dialog open={periodeDialogOpen} onOpenChange={setPeriodeDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Buat Periode Kepengurusan</DialogTitle>
+            <DialogTitle>{editingPeriodeId ? 'Edit Periode Kepengurusan' : 'Buat Periode Kepengurusan'}</DialogTitle>
             <DialogDescription>Contoh nama: Periode 2024/2025</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -454,8 +510,8 @@ export function AdminStruktur() {
             <Button variant="outline" onClick={() => setPeriodeDialogOpen(false)}>
               Batal
             </Button>
-            <Button onClick={createPeriode} disabled={creatingPeriode}>
-              {creatingPeriode ? 'Menyimpan...' : 'Simpan'}
+            <Button onClick={submitPeriode} disabled={creatingPeriode}>
+              {creatingPeriode ? 'Menyimpan...' : editingPeriodeId ? 'Update' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>

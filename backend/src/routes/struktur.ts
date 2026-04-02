@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { anggota, strukturPeriode } from '../db/schema.js'
 import { authMiddleware } from '../middleware/auth.js'
@@ -12,41 +12,52 @@ type StrukturTemplateNode = {
   parentRole: string | null
   urutan: number
   divisi: string | null
+  single: boolean
 }
 
 const STRUKTUR_TEMPLATE: StrukturTemplateNode[] = [
-  { role: 'Ketua Kelompok Keilmuan', parentRole: null, urutan: 1, divisi: 'kepemimpinan' },
-  { role: 'Dosen / Anggota Kelompok Keilmuan', parentRole: 'Ketua Kelompok Keilmuan', urutan: 1, divisi: 'kepemimpinan' },
-  { role: 'Asisten Peneliti', parentRole: 'Ketua Kelompok Keilmuan', urutan: 2, divisi: 'anggota' },
-  { role: 'Koordinator Asisten', parentRole: 'Asisten Peneliti', urutan: 1, divisi: 'anggota' },
-  { role: 'Bendahara', parentRole: 'Asisten Peneliti', urutan: 2, divisi: 'anggota' },
-  { role: 'Sekretaris', parentRole: 'Asisten Peneliti', urutan: 3, divisi: 'anggota' },
-  { role: 'Divisi Penelitian dan Pengembangan', parentRole: 'Asisten Peneliti', urutan: 4, divisi: 'kolaborasi' },
-  { role: 'Koordinator Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 1, divisi: 'kolaborasi' },
-  { role: 'Anggota Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 2, divisi: 'kolaborasi' },
-  { role: 'Divisi Pengabdian dan Pelatihan', parentRole: 'Asisten Peneliti', urutan: 5, divisi: 'kolaborasi' },
-  { role: 'Koordinator Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 1, divisi: 'kolaborasi' },
-  { role: 'Anggota Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 2, divisi: 'kolaborasi' },
-  { role: 'Divisi Rumah Tangga', parentRole: 'Asisten Peneliti', urutan: 6, divisi: 'kolaborasi' },
-  { role: 'Koordinator Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 1, divisi: 'kolaborasi' },
-  { role: 'Anggota Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 2, divisi: 'kolaborasi' },
+  { role: 'Ketua Kelompok Keilmuan', parentRole: null, urutan: 1, divisi: 'kepemimpinan', single: true },
+  { role: 'Dosen / Anggota Kelompok Keilmuan', parentRole: 'Ketua Kelompok Keilmuan', urutan: 10, divisi: 'kepemimpinan', single: false },
+  { role: 'Asisten Peneliti', parentRole: 'Ketua Kelompok Keilmuan', urutan: 20, divisi: 'anggota', single: true },
+  { role: 'Koordinator Asisten', parentRole: 'Asisten Peneliti', urutan: 30, divisi: 'anggota', single: true },
+  { role: 'Sekretaris', parentRole: 'Asisten Peneliti', urutan: 40, divisi: 'anggota', single: true },
+  { role: 'Bendahara', parentRole: 'Asisten Peneliti', urutan: 50, divisi: 'anggota', single: true },
+  { role: 'Divisi Penelitian dan Pengembangan', parentRole: 'Asisten Peneliti', urutan: 60, divisi: 'kolaborasi', single: true },
+  { role: 'Koordinator Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 61, divisi: 'kolaborasi', single: true },
+  { role: 'Anggota Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 62, divisi: 'kolaborasi', single: false },
+  { role: 'Divisi Pengabdian dan Pelatihan', parentRole: 'Asisten Peneliti', urutan: 70, divisi: 'kolaborasi', single: true },
+  { role: 'Koordinator Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 71, divisi: 'kolaborasi', single: true },
+  { role: 'Anggota Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 72, divisi: 'kolaborasi', single: false },
+  { role: 'Divisi Rumah Tangga', parentRole: 'Asisten Peneliti', urutan: 80, divisi: 'kolaborasi', single: true },
+  { role: 'Koordinator Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 81, divisi: 'kolaborasi', single: true },
+  { role: 'Anggota Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 82, divisi: 'kolaborasi', single: false },
 ]
+
+type StrukturRow = {
+  id: number
+  nama: string
+  role: string
+  divisi: string | null
+  parentId: number | null
+  periodeId: number | null
+  photo: string | null
+  urutan: number | null
+}
+
+type StrukturTreeNode = {
+  id: number
+  nama: string
+  role: string
+  divisi: string | null
+  parentId: number | null
+  periodeId: number | null
+  photo: string | null
+  urutan: number
+  children: StrukturTreeNode[]
+}
 
 function normalizeRole(input: string): string {
   return input.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-function getTemplateByRole(role: string): StrukturTemplateNode | null {
-  const target = normalizeRole(role)
-  return STRUKTUR_TEMPLATE.find((entry) => normalizeRole(entry.role) === target) ?? null
-}
-
-function resolveParentId(role: string, rows: Array<{ id: number; role: string }>): number | null {
-  const template = getTemplateByRole(role)
-  if (!template || !template.parentRole) return null
-  const parentRoleNormalized = normalizeRole(template.parentRole)
-  const parent = rows.find((row) => normalizeRole(row.role) === parentRoleNormalized)
-  return parent?.id ?? null
 }
 
 function parsePeriodeId(input: string | undefined): number | null {
@@ -55,28 +66,118 @@ function parsePeriodeId(input: string | undefined): number | null {
   return Number.isInteger(parsed) ? parsed : null
 }
 
-function getActivePeriode() {
-  return db.select().from(strukturPeriode).where(eq(strukturPeriode.isActive, true)).orderBy(asc(strukturPeriode.id)).get()
+function getTemplateByRole(role: string): StrukturTemplateNode | null {
+  const target = normalizeRole(role)
+  return STRUKTUR_TEMPLATE.find((entry) => normalizeRole(entry.role) === target) ?? null
 }
 
-function ensureActivePeriode() {
-  const existing = getActivePeriode()
-  if (existing) return existing
-  const created = db
+function getParentTemplate(role: string): StrukturTemplateNode | null {
+  const template = getTemplateByRole(role)
+  if (!template?.parentRole) return null
+  return getTemplateByRole(template.parentRole)
+}
+
+function getLatestPeriode() {
+  return db.select().from(strukturPeriode).orderBy(desc(strukturPeriode.id)).get()
+}
+
+function getActivePeriode() {
+  return db.select().from(strukturPeriode).where(eq(strukturPeriode.isActive, true)).orderBy(desc(strukturPeriode.id)).get()
+}
+
+function ensureDefaultPeriode() {
+  const latest = getLatestPeriode()
+  if (latest) return latest
+  return db
     .insert(strukturPeriode)
-    .values({ nama: 'Periode Aktif', isActive: true, createdAt: new Date() })
+    .values({
+      nama: 'Periode 1',
+      isActive: true,
+      createdAt: new Date(),
+    })
     .returning()
     .get()
-  return created
 }
 
-// GET /struktur/periode — list semua periode
+function getPeriodeOrDefault(periodeId: number | null) {
+  if (periodeId !== null) {
+    return db.select().from(strukturPeriode).where(eq(strukturPeriode.id, periodeId)).get() ?? null
+  }
+  const latest = getLatestPeriode()
+  if (latest) return latest
+  return ensureDefaultPeriode()
+}
+
+function validateRoleUniqueness(periodeId: number, role: string, exceptId?: number) {
+  const template = getTemplateByRole(role)
+  if (!template || !template.single) return null
+  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
+  const duplicate = rows.find(
+    (row) => normalizeRole(row.role) === normalizeRole(role) && (exceptId ? row.id !== exceptId : true),
+  )
+  if (!duplicate) return null
+  return `Role "${role}" hanya boleh 1 orang per periode`
+}
+
+function resolveParentIdOrError(periodeId: number, role: string, exceptId?: number): { parentId: number | null; error?: string } {
+  const parentTemplate = getParentTemplate(role)
+  if (!parentTemplate) return { parentId: null }
+  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
+  const parent = rows.find(
+    (row) =>
+      normalizeRole(row.role) === normalizeRole(parentTemplate.role) &&
+      (exceptId ? row.id !== exceptId : true),
+  )
+  if (!parent) {
+    return { parentId: null, error: `Parent role "${parentTemplate.role}" harus diisi lebih dulu` }
+  }
+  return { parentId: parent.id }
+}
+
+function sortRowsByTemplate(rows: StrukturRow[]) {
+  return [...rows].sort((a, b) => {
+    const ta = getTemplateByRole(a.role)
+    const tb = getTemplateByRole(b.role)
+    const oa = ta?.urutan ?? 9999
+    const ob = tb?.urutan ?? 9999
+    if (oa !== ob) return oa - ob
+    return a.id - b.id
+  })
+}
+
+function buildTree(rows: StrukturRow[]): StrukturTreeNode[] {
+  const sorted = sortRowsByTemplate(rows).map((row) => ({
+    ...row,
+    urutan: getTemplateByRole(row.role)?.urutan ?? row.urutan ?? 9999,
+    children: [] as StrukturTreeNode[],
+  }))
+
+  const nodeById = new Map<number, StrukturTreeNode>()
+  sorted.forEach((row) => nodeById.set(row.id, row))
+
+  const roots: StrukturTreeNode[] = []
+  for (const node of sorted) {
+    if (node.parentId && nodeById.has(node.parentId)) {
+      nodeById.get(node.parentId)!.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+
+  const sortDeep = (nodes: StrukturTreeNode[]) => {
+    nodes.sort((a, b) => a.urutan - b.urutan || a.id - b.id)
+    nodes.forEach((node) => sortDeep(node.children))
+  }
+  sortDeep(roots)
+  return roots
+}
+
+// Periode
 strukturRoutes.get('/periode', (c) => {
-  const rows = db.select().from(strukturPeriode).orderBy(asc(strukturPeriode.id)).all()
+  const rows = db.select().from(strukturPeriode).orderBy(desc(strukturPeriode.id)).all()
   return c.json({ success: true, data: rows })
 })
 
-// POST /struktur/periode [AUTH]
 strukturRoutes.post('/periode', authMiddleware, async (c) => {
   const payload = await c.req.json<{ nama?: string; mulai?: string; selesai?: string }>().catch(() => null)
   const nama = payload?.nama?.trim() ?? ''
@@ -97,12 +198,35 @@ strukturRoutes.post('/periode', authMiddleware, async (c) => {
   return c.json({ success: true, data: inserted }, 201)
 })
 
-// PUT /struktur/periode/:id/activate [AUTH]
+strukturRoutes.put('/periode/:id', authMiddleware, async (c) => {
+  const id = Number(c.req.param('id'))
+  if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID periode tidak valid' }, 400)
+  const found = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, id)).get()
+  if (!found) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
+
+  const payload = await c.req.json<{ nama?: string; mulai?: string; selesai?: string }>().catch(() => null)
+  const nama = payload?.nama?.trim() ?? ''
+  if (!nama) return c.json({ success: false, error: 'Nama periode wajib diisi' }, 400)
+
+  const updated = db
+    .update(strukturPeriode)
+    .set({
+      nama,
+      mulai: payload?.mulai?.trim() || null,
+      selesai: payload?.selesai?.trim() || null,
+    })
+    .where(eq(strukturPeriode.id, id))
+    .returning()
+    .get()
+
+  return c.json({ success: true, data: updated })
+})
+
 strukturRoutes.put('/periode/:id/activate', authMiddleware, (c) => {
   const id = Number(c.req.param('id'))
-  if (Number.isNaN(id)) return c.json({ success: false, error: 'ID periode tidak valid' }, 400)
-  const target = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, id)).get()
-  if (!target) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
+  if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID periode tidak valid' }, 400)
+  const found = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, id)).get()
+  if (!found) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
 
   db.transaction((tx) => {
     tx.update(strukturPeriode).set({ isActive: false }).run()
@@ -112,26 +236,60 @@ strukturRoutes.put('/periode/:id/activate', authMiddleware, (c) => {
   return c.json({ success: true, message: 'Periode aktif berhasil diubah' })
 })
 
-// GET /struktur/template — daftar role tetap sesuai bagan organisasi
+strukturRoutes.delete('/periode/:id', authMiddleware, async (c) => {
+  const id = Number(c.req.param('id'))
+  if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID periode tidak valid' }, 400)
+  const found = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, id)).get()
+  if (!found) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
+
+  const rows = db.select().from(anggota).where(eq(anggota.periodeId, id)).all()
+  for (const row of rows) {
+    if (row.photo) await deleteFile(row.photo)
+  }
+
+  db.transaction((tx) => {
+    tx.delete(anggota).where(eq(anggota.periodeId, id)).run()
+    tx.delete(strukturPeriode).where(eq(strukturPeriode.id, id)).run()
+  })
+
+  const active = getActivePeriode()
+  if (!active) {
+    const latest = getLatestPeriode()
+    if (latest) {
+      db.update(strukturPeriode).set({ isActive: true }).where(eq(strukturPeriode.id, latest.id)).run()
+    }
+  }
+
+  return c.json({ success: true, message: 'Periode berhasil dihapus' })
+})
+
+// Template
 strukturRoutes.get('/template', (c) => c.json({ success: true, data: STRUKTUR_TEMPLATE }))
 
-// GET /struktur — list anggota periode aktif atau periode tertentu via ?periodeId=
+// Struktur data by periode (flat + tree)
 strukturRoutes.get('/', (c) => {
-  const queryPeriodeId = parsePeriodeId(c.req.query('periodeId'))
-  const activePeriode = ensureActivePeriode()
-  const periodeId = queryPeriodeId ?? activePeriode.id
+  const reqPeriodeId = parsePeriodeId(c.req.query('periodeId'))
+  const periode = getPeriodeOrDefault(reqPeriodeId)
+  if (!periode) return c.json({ success: true, data: [], tree: [], meta: { periodeId: null } })
 
   const rows = db
     .select()
     .from(anggota)
-    .where(eq(anggota.periodeId, periodeId))
+    .where(eq(anggota.periodeId, periode.id))
     .orderBy(asc(anggota.parentId), asc(anggota.urutan), asc(anggota.id))
-    .all()
+    .all() as StrukturRow[]
 
-  return c.json({ success: true, data: rows, meta: { periodeId, activePeriodeId: activePeriode.id } })
+  const sortedRows = sortRowsByTemplate(rows)
+  const tree = buildTree(rows)
+  return c.json({
+    success: true,
+    data: sortedRows,
+    tree,
+    meta: { periodeId: periode.id, activePeriodeId: getActivePeriode()?.id ?? null },
+  })
 })
 
-// POST /struktur [AUTH]
+// Create anggota
 strukturRoutes.post('/', authMiddleware, async (c) => {
   let body: Record<string, string | File>
   try {
@@ -142,21 +300,20 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
 
   const nama = typeof body['nama'] === 'string' ? body['nama'].trim() : ''
   const role = typeof body['role'] === 'string' ? body['role'].trim() : ''
-  const periodeIdInput = typeof body['periodeId'] === 'string' ? parsePeriodeId(body['periodeId']) : null
-  const activePeriode = ensureActivePeriode()
-  const periodeId = periodeIdInput ?? activePeriode.id
+  const reqPeriodeId = typeof body['periodeId'] === 'string' ? parsePeriodeId(body['periodeId']) : null
+  const periode = getPeriodeOrDefault(reqPeriodeId)
 
   if (!nama || !role) return c.json({ success: false, error: 'Field "nama" dan "role" diperlukan' }, 400)
-  const periode = db.select().from(strukturPeriode).where(eq(strukturPeriode.id, periodeId)).get()
   if (!periode) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 400)
 
   const template = getTemplateByRole(role)
   if (!template) return c.json({ success: false, error: 'Role tidak ada dalam template struktur organisasi' }, 400)
 
-  const existing = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
-  const parentId = resolveParentId(role, existing.map((item) => ({ id: item.id, role: item.role })))
-  const urutan = template.urutan
-  const divisi = template.divisi
+  const duplicateError = validateRoleUniqueness(periode.id, role)
+  if (duplicateError) return c.json({ success: false, error: duplicateError }, 409)
+
+  const { parentId, error } = resolveParentIdOrError(periode.id, role)
+  if (error) return c.json({ success: false, error }, 400)
 
   let photo: string | null = null
   const photoFile = body['photo']
@@ -168,20 +325,27 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
 
   const inserted = db
     .insert(anggota)
-    .values({ nama, role, divisi, photo, urutan, parentId, periodeId })
+    .values({
+      nama,
+      role: template.role,
+      divisi: template.divisi,
+      photo,
+      urutan: template.urutan,
+      parentId,
+      periodeId: periode.id,
+    })
     .returning()
     .get()
 
   return c.json({ success: true, data: inserted }, 201)
 })
 
-// PUT /struktur/:id [AUTH]
+// Update anggota
 strukturRoutes.put('/:id', authMiddleware, async (c) => {
   const id = Number(c.req.param('id'))
-  if (Number.isNaN(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
+  if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
   const existing = db.select().from(anggota).where(eq(anggota.id, id)).get()
   if (!existing) return c.json({ success: false, error: 'Anggota tidak ditemukan' }, 404)
-  const existingPeriodeId = existing.periodeId ?? ensureActivePeriode().id
 
   let body: Record<string, string | File>
   try {
@@ -190,77 +354,72 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
     return c.json({ success: false, error: 'Gagal parse form data' }, 400)
   }
 
-  const updates: Partial<{
-    nama: string
-    role: string
-    divisi: string | null
-    parentId: number | null
-    urutan: number | null
-    photo: string | null
-  }> = {}
+  const nextNama = typeof body['nama'] === 'string' ? body['nama'].trim() : existing.nama
+  const nextRole = typeof body['role'] === 'string' ? body['role'].trim() : existing.role
+  if (!nextNama || !nextRole) return c.json({ success: false, error: 'Nama dan role wajib diisi' }, 400)
 
-  if (typeof body['nama'] === 'string') {
-    const trimmed = body['nama'].trim()
-    if (!trimmed) return c.json({ success: false, error: 'Nama tidak boleh kosong' }, 400)
-    updates.nama = trimmed
-  }
+  const periodeId = existing.periodeId ?? ensureDefaultPeriode().id
+  const template = getTemplateByRole(nextRole)
+  if (!template) return c.json({ success: false, error: 'Role tidak ada dalam template struktur organisasi' }, 400)
 
-  if (typeof body['role'] === 'string') {
-    const nextRole = body['role'].trim()
-    const template = getTemplateByRole(nextRole)
-    if (!template) return c.json({ success: false, error: 'Role tidak ada dalam template struktur organisasi' }, 400)
-    updates.role = nextRole
-    updates.divisi = template.divisi
-    updates.urutan = template.urutan
+  const duplicateError = validateRoleUniqueness(periodeId, nextRole, id)
+  if (duplicateError) return c.json({ success: false, error: duplicateError }, 409)
 
-    const rows = db
-      .select()
-      .from(anggota)
-      .where(eq(anggota.periodeId, existingPeriodeId))
-      .all()
-      .map((item) => ({ id: item.id, role: item.id === id ? nextRole : item.role }))
-    updates.parentId = resolveParentId(nextRole, rows)
-  }
+  const { parentId, error } = resolveParentIdOrError(periodeId, nextRole, id)
+  if (error) return c.json({ success: false, error }, 400)
 
+  let photo = existing.photo
   const photoFile = body['photo']
   if (photoFile instanceof File) {
     const validationError = validateImage(photoFile)
     if (validationError) return c.json({ success: false, error: validationError }, 422)
     if (existing.photo) await deleteFile(existing.photo)
-    updates.photo = await saveFile(photoFile, 'struktur')
+    photo = await saveFile(photoFile, 'struktur')
   }
 
-  const updated = db.update(anggota).set(updates).where(eq(anggota.id, id)).returning().get()
+  const updated = db
+    .update(anggota)
+    .set({
+      nama: nextNama,
+      role: template.role,
+      divisi: template.divisi,
+      parentId,
+      urutan: template.urutan,
+      photo,
+    })
+    .where(eq(anggota.id, id))
+    .returning()
+    .get()
+
   return c.json({ success: true, data: updated })
 })
 
-// POST /struktur/reset [AUTH] — hapus seluruh anggota pada periode tertentu (default aktif)
 strukturRoutes.post('/reset', authMiddleware, async (c) => {
   const payload = await c.req.json<{ periodeId?: number }>().catch((): { periodeId?: number } => ({}))
-  const activePeriode = ensureActivePeriode()
-  const periodeId = Number.isInteger(payload.periodeId) ? (payload.periodeId as number) : activePeriode.id
+  const reqPeriodeId = Number.isInteger(payload.periodeId) ? payload.periodeId! : null
+  const periode = getPeriodeOrDefault(reqPeriodeId)
+  if (!periode) return c.json({ success: false, error: 'Periode tidak ditemukan' }, 404)
 
-  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all()
+  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periode.id)).all()
   for (const row of rows) {
     if (row.photo) await deleteFile(row.photo)
   }
-  db.delete(anggota).where(eq(anggota.periodeId, periodeId)).run()
+  db.delete(anggota).where(eq(anggota.periodeId, periode.id)).run()
   return c.json({ success: true, message: 'Data struktur periode berhasil dihapus' })
 })
 
-// DELETE /struktur/:id [AUTH]
 strukturRoutes.delete('/:id', authMiddleware, async (c) => {
   const id = Number(c.req.param('id'))
-  if (Number.isNaN(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
+  if (!Number.isInteger(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
 
   const existing = db.select().from(anggota).where(eq(anggota.id, id)).get()
   if (!existing) return c.json({ success: false, error: 'Anggota tidak ditemukan' }, 404)
-  const existingPeriodeId = existing.periodeId ?? ensureActivePeriode().id
+  const periodeId = existing.periodeId ?? ensureDefaultPeriode().id
 
   const hasChild = db
     .select()
     .from(anggota)
-    .where(and(eq(anggota.parentId, id), eq(anggota.periodeId, existingPeriodeId)))
+    .where(and(eq(anggota.parentId, id), eq(anggota.periodeId, periodeId)))
     .get()
   if (hasChild) return c.json({ success: false, error: 'Tidak bisa hapus node yang masih punya anak' }, 400)
 
