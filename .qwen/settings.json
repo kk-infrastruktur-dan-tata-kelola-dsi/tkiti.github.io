@@ -6,7 +6,8 @@
       "Bash(mkdir *)",
       "Bash(node *)",
       "Bash(rmdir *)",
-      "Bash(git init)"
+      "Bash(git init)",
+      "Bash(git add *)"
     ]
   },
   "$version": 3

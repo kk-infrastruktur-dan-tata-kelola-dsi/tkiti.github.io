@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - '.github/workflows/backend.yml'
 
 jobs:
   build-and-deploy:
@@ -19,14 +20,20 @@ jobs:
           rsync -av --delete \
             --exclude='data/' \
             --exclude='uploads/' \
+            --no-perms --no-owner --no-group \
             backend/ /www/wwwroot/tkiti-web-profile/
 
+      - name: Fix permissions
+        run: |
+          chmod -R 755 /www/wwwroot/tkiti-web-profile/backend
+          chown -R tkiti:tkiti /www/wwwroot/tkiti-web-profile/backend 2>/dev/null || true
+
       - name: Build Docker image
-        working-directory: /www/wwwroot/tkiti-web-profile
+        working-directory: /www/wwwroot/tkiti-web-profile/backend
         run: docker compose build --no-cache
 
       - name: Restart containers
-        working-directory: /www/wwwroot/tkiti-web-profile
+        working-directory: /www/wwwroot/tkiti-web-profile/backend
         run: docker compose up -d --remove-orphans
 
       - name: Clean up old Docker images
@@ -34,9 +41,16 @@ jobs:
 
       - name: Health check
         run: |
+          echo "Waiting for container to start..."
+          sleep 10
           for i in 1 2 3; do
+            if curl -f http://localhost:5000/health; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 5s..."
             sleep 5
-            curl -f https://api.tkiti.tech/health && exit 0
-            echo "Attempt $i failed, retrying..."
           done
-          echo "Health check failed after 3 attempts" && exit 1
+          echo "Health check failed after 3 attempts"
+          docker compose logs api
+          exit 1
