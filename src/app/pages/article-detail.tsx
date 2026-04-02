@@ -188,7 +188,7 @@ export function ArticleDetail() {
                 fontWeight: 600,
               }}
             >
-              {authorName
+              {String(authorName)
                 .split(" ")
                 .map((n) => n[0])
                 .slice(0, 2)

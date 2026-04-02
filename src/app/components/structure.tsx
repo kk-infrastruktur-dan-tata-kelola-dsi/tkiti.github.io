@@ -214,7 +214,7 @@ export function Structure() {
                         fontWeight: 600,
                       }}
                     >
-                      {(member.name ?? "Anggota")
+                      {String(member.name ?? "Anggota")
                         .split(" ")
                         .map((n) => n[0])
                         .slice(0, 2)

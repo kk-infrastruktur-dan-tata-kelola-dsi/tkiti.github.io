@@ -140,7 +140,7 @@ function ArticleCard({ article }: { article: Article }) {
                     fontWeight: 600,
                   }}
                 >
-                  {authorName
+                  {String(authorName)
                     .split(" ")
                     .map((n) => n[0])
                     .slice(0, 2)
