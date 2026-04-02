@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add *)",
+      "Bash(pnpm *)",
+      "Bash(mkdir *)",
+      "Bash(node *)",
+      "Bash(rmdir *)",
+      "Bash(git init)"
+    ]
+  },
+  "$version": 3
+}

@@ -1,0 +1,23 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tkiti-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5000"   # bind ke loopback saja — Cloudflare Tunnel yang expose ke publik
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - PORT=${PORT}
+    volumes:
+      - ./data:/app/data         # SQLite file persisten
+      - ./uploads:/app/uploads   # foto upload persisten
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

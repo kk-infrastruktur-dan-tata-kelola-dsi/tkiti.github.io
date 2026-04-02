@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TKITI | Laboratorium Tata Kelola &amp; Infrastruktur Teknologi Informasi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container": "#1f2021",
+              "secondary-fixed-dim": "#b8c9d5",
+              "error": "#ffb4ab",
+              "surface-bright": "#38393a",
+              "secondary-fixed": "#d4e5f1",
+              "on-secondary": "#23323c",
+              "on-secondary-fixed-variant": "#394953",
+              "on-tertiary-container": "#0c5446",
+              "on-tertiary": "#00382e",
+              "surface": "#121315",
+              "surface-dim": "#121315",
+              "primary-fixed": "#70f9da",
+              "error-container": "#93000a",
+              "outline": "#85948f",
+              "on-primary-fixed": "#00201a",
+              "surface-container-highest": "#343536",
+              "inverse-surface": "#e3e2e3",
+              "on-surface": "#e3e2e3",
+              "primary-container": "#3ecfb2",
+              "on-background": "#e3e2e3",
+              "inverse-on-surface": "#303032",
+              "surface-container-low": "#1b1c1d",
+              "on-secondary-container": "#a6b7c3",
+              "tertiary-fixed": "#afefdd",
+              "tertiary": "#a2e2d0",
+              "surface-tint": "#4fdcbf",
+              "primary": "#61eccd",
+              "secondary-container": "#394953",
+              "on-error": "#690005",
+              "tertiary-fixed-dim": "#94d3c1",
+              "inverse-primary": "#006b5a",
+              "surface-container-lowest": "#0d0e0f",
+              "on-surface-variant": "#bbcac4",
+              "on-primary-fixed-variant": "#005143",
+              "tertiary-container": "#87c6b5",
+              "on-error-container": "#ffdad6",
+              "primary-fixed-dim": "#4fdcbf",
+              "surface-container-high": "#292a2b",
+              "surface-variant": "#343536",
+              "outline-variant": "#3c4a45",
+              "on-primary": "#00382e",
+              "on-secondary-fixed": "#0d1d26",
+              "on-tertiary-fixed-variant": "#065043",
+              "on-primary-container": "#005446",
+              "secondary": "#b8c9d5",
+              "on-tertiary-fixed": "#00201a",
+              "background": "#121315"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        background-color: #070809;
+        color: #e3e2e3;
+        overflow-x: hidden;
+      }
+      .scanline {
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        opacity: 0.02;
+      }
+      .glass-card {
+        background: rgba(13, 14, 15, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(62, 207, 178, 0.15);
+      }
+      .marquee-content {
+        animation: scroll 30s linear infinite;
+      }
+      @keyframes scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .glow-primary {
+        box-shadow: 0 0 40px rgba(62, 207, 178, 0.1);
+      }
+      .blob {
+        position: absolute;
+        filter: blur(120px);
+        z-index: -1;
+        opacity: 0.4;
+      }
+    </style>
+</head>
+<body class="font-body selection:bg-primary selection:text-on-primary">
+<div class="scanline"></div>
+<!-- Background Blobs -->
+<div class="blob w-[500px] h-[500px] bg-primary/20 top-[-10%] right-[-5%] rounded-full"></div>
+<div class="blob w-[600px] h-[600px] bg-secondary-container/30 bottom-[10%] left-[-10%] rounded-full"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#070809]/60 backdrop-blur-[20px] border-b border-[#3ECFB2]/15 shadow-[0_0_40px_rgba(62,207,178,0.1)]">
+<div class="flex justify-between items-center px-8 h-20 max-w-full mx-auto">
+<div class="text-xl font-bold tracking-widest text-[#3ECFB2] font-['Space_Grotesk']">
+                TKITI
+            </div>
+<div class="hidden md:flex items-center gap-12">
+<a class="text-[#3ECFB2] border-b border-[#3ECFB2] pb-1 font-['JetBrains_Mono'] uppercase text-sm tracking-widest" href="#">RESEARCH</a>
+<a class="text-[#e3e2e3]/60 font-['JetBrains_Mono'] uppercase text-sm tracking-widest hover:text-[#3ECFB2] transition-colors duration-300" href="#">ARCHIVE</a>
+<a class="text-[#e3e2e3]/60 font-['JetBrains_Mono'] uppercase text-sm tracking-widest hover:text-[#3ECFB2] transition-colors duration-300" href="#">SYSTEMS</a>
+</div>
+<button class="bg-[#3ecfb2] text-[#00382e] px-6 py-2 rounded-sm font-['JetBrains_Mono'] text-xs font-bold tracking-widest hover:brightness-110 active:scale-95 transition-all">
+                HUBUNGI KAMI
+            </button>
+</div>
+</nav>
+<main class="relative pt-20">
+<!-- Hero Section -->
+<section class="relative min-h-[921px] flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="Server Rack" class="w-full h-full object-cover opacity-20 grayscale" data-alt="Futuristic 3D render of a glass server rack with glowing internal light paths and network nodes in a dark technical environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMjtW1P_Vedqzi7fMtRyMYPH2kNywmVLguDnu8QTLi1CIUWmBC8l9u3jAZOGWMxeYZTPN-ANeqojv0pMu-y3hNpGKN8JomoIaycVIELm4LmVr-3WqunM0LRlJfVF16XtPXbVA1tSzkvxp2b96RKFXK8xusq5iTqNB1hbWpvZr4ce4KKuQ7x106fRWvsN2AZr7hxi7BlO8VGLIp3Y8ylaKq_eUnMltF9Sfx2t-4BIawfd9gQH4PlxCzKVUmaDLG3nO3_Ahxpfsu3iTF"/>
+</div>
+<div class="relative z-10 max-w-5xl mx-auto">
+<p class="font-label text-primary tracking-[0.3em] mb-6 animate-pulse">// SYSTEM_INITIATED</p>
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tighter text-on-surface mb-8 leading-[1.1]">
+                    LABORATORIUM TATA KELOLA &amp; <br/>
+<span class="text-primary-container">INFRASTRUKTUR TEKNOLOGI INFORMASI</span>
+</h1>
+<p class="font-body text-on-surface-variant text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+                    Arsitektur pemetaan infrastruktur tingkat lanjut, optimasi konfigurasi server, dan sistem deployment otomatis berskala enterprise.
+                </p>
+<div class="flex flex-col md:flex-row gap-4 justify-center">
+<button class="bg-primary-container text-on-primary-container px-8 py-4 rounded-sm font-label font-bold tracking-widest flex items-center gap-2 glow-primary transition-all hover:translate-y-[-2px]">
+                        EXPLORE NODES <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="border border-outline-variant/30 text-on-surface px-8 py-4 rounded-sm font-label tracking-widest hover:bg-surface-container-high transition-all">
+                        TECHNICAL_DOCS.PDF
+                    </button>
+</div>
+</div>
+</section>
+<!-- Dynamic Tech Marquee -->
+<section class="py-12 bg-surface-container-lowest/50 border-y border-outline-variant/10 overflow-hidden">
+<div class="flex marquee-content whitespace-nowrap items-center">
+<div class="flex items-center gap-24 px-12">
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">PROXMOX VE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">DEBIAN</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">CLOUDFLARE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">ORACLE DB</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">VMWARE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">DOCKER</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">NGINX</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">GRAFANA</span>
+</div>
+<!-- Duplicate for seamless loop -->
+<div class="flex items-center gap-24 px-12">
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">PROXMOX VE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">DEBIAN</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">CLOUDFLARE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">ORACLE DB</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">VMWARE</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">DOCKER</span>
+<span class="font-label text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/40 border border-primary/20 px-6 py-2">NGINX</span>
+<span class="font-label text-2xl font-bold text-on-surface-variant opacity-50">GRAFANA</span>
+</div>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="py-24 px-8 max-w-7xl mx-auto">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+<div class="group">
+<div class="font-label text-5xl md:text-6xl font-bold text-primary mb-2 transition-transform group-hover:scale-110">10+</div>
+<div class="font-label text-xs tracking-widest text-on-surface-variant opacity-60 uppercase">System Nodes</div>
+</div>
+<div class="group">
+<div class="font-label text-5xl md:text-6xl font-bold text-primary mb-2 transition-transform group-hover:scale-110">6+</div>
+<div class="font-label text-xs tracking-widest text-on-surface-variant opacity-60 uppercase">Research Projects</div>
+</div>
+<div class="group">
+<div class="font-label text-5xl md:text-6xl font-bold text-primary mb-2 transition-transform group-hover:scale-110">300+</div>
+<div class="font-label text-xs tracking-widest text-on-surface-variant opacity-60 uppercase">Virtual Machines</div>
+</div>
+<div class="group">
+<div class="font-label text-5xl md:text-6xl font-bold text-primary mb-2 transition-transform group-hover:scale-110">24/7</div>
+<div class="font-label text-xs tracking-widest text-on-surface-variant opacity-60 uppercase">System Monitoring</div>
+</div>
+</div>
+</section>
+<!-- Kegiatan Cards Grid -->
+<section class="py-24 px-8 max-w-7xl mx-auto">
+<div class="flex justify-between items-end mb-16">
+<div>
+<h2 class="font-label text-primary tracking-widest mb-4">//KEGIATAN_LAB</h2>
+<h3 class="font-headline text-4xl font-bold">CORE CAPABILITIES</h3>
+</div>
+<div class="hidden md:block font-label text-on-surface-variant opacity-40 text-xs text-right">
+                    REF_ID: TKITI_SEC_02<br/>STATUS: OPERATIONAL
+                </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">001</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">memory</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">HARDWARE DEPLOYMENT</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Manajemen fisik infrastruktur server dan optimasi siklus hidup perangkat keras.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+<!-- Card 2 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">002</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">layers</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">VIRTUALIZATION</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Implementasi Hypervisor berskala besar menggunakan Proxmox dan VMWare ESXi.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+<!-- Card 3 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">003</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">hub</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">NETWORKING ARCH</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Desain topologi jaringan cerdas dengan segmentasi VLAN dan proteksi layer 7.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+<!-- Card 4 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">004</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">shield</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">CYBER SECURITY</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Audit keamanan berkelanjutan, enkripsi data, dan hardening sistem operasi.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+<!-- Card 5 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">005</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">insights</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">MONITORING</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Visualisasi data real-time menggunakan stack Grafana, Prometheus, dan InfluxDB.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+<!-- Card 6 -->
+<div class="glass-card p-8 group hover:bg-primary/5 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 font-label text-[10px] text-primary opacity-30">006</div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6 group-hover:scale-110 transition-transform">school</span>
+<h4 class="font-headline text-xl font-bold mb-4 tracking-tight">EDUCATION</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Pusat pelatihan teknis dan workshop infrastruktur TI bagi generasi masa depan.</p>
+<div class="w-full h-[1px] bg-primary/20 group-hover:bg-primary/60 transition-colors"></div>
+</div>
+</div>
+</section>
+<!-- Sejarah Timeline -->
+<section class="py-24 px-8 max-w-5xl mx-auto">
+<h2 class="font-label text-primary tracking-widest mb-16 text-center">[01_SEJARAH]</h2>
+<div class="relative">
+<!-- Timeline Line -->
+<div class="absolute left-1/2 transform -translate-x-1/2 h-full w-[1px] bg-gradient-to-b from-primary/0 via-primary/50 to-primary/0 hidden md:block"></div>
+<!-- 2010 -->
+<div class="flex flex-col md:flex-row items-center mb-24 relative">
+<div class="w-full md:w-1/2 md:pr-12 text-center md:text-right">
+<div class="font-headline text-4xl font-bold text-primary mb-2">2010</div>
+<h4 class="font-headline text-xl font-bold text-on-surface mb-4">ESTABLISHMENT</h4>
+<p class="text-on-surface-variant text-sm">Pembentukan awal unit pengelolaan infrastruktur dasar dan sistem administrasi server tradisional.</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#070809] border-2 border-primary absolute left-1/2 transform -translate-x-1/2 hidden md:block z-10 glow-primary"></div>
+<div class="w-full md:w-1/2 md:pl-12"></div>
+</div>
+<!-- 2015 -->
+<div class="flex flex-col md:flex-row-reverse items-center mb-24 relative">
+<div class="w-full md:w-1/2 md:pl-12 text-center md:text-left">
+<div class="font-headline text-4xl font-bold text-primary mb-2">2015</div>
+<h4 class="font-headline text-xl font-bold text-on-surface mb-4">EVOLUTION</h4>
+<p class="text-on-surface-variant text-sm">Migrasi ke teknologi virtualisasi dan otomatisasi sistem untuk efisiensi sumber daya TI.</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#070809] border-2 border-primary absolute left-1/2 transform -translate-x-1/2 hidden md:block z-10 glow-primary"></div>
+<div class="w-full md:w-1/2 md:pr-12"></div>
+</div>
+<!-- 2024 -->
+<div class="flex flex-col md:flex-row items-center relative">
+<div class="w-full md:w-1/2 md:pr-12 text-center md:text-right">
+<div class="font-headline text-4xl font-bold text-primary mb-2">2024</div>
+<h4 class="font-headline text-xl font-bold text-on-surface mb-4">THE TKITI ERA</h4>
+<p class="text-on-surface-variant text-sm">Transformasi penuh menjadi Laboratorium Tata Kelola &amp; Infrastruktur TI dengan fokus pada Cloud-Native &amp; Security.</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#070809] border-2 border-primary absolute left-1/2 transform -translate-x-1/2 hidden md:block z-10 glow-primary"></div>
+<div class="w-full md:w-1/2 md:pl-12"></div>
+</div>
+</div>
+</section>
+<!-- Structure Section -->
+<section class="py-24 px-8 bg-surface-container-low/30">
+<div class="max-w-7xl mx-auto">
+<h2 class="font-label text-primary tracking-widest mb-16 text-center">//STRUCTURE_COL</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="text-center">
+<div class="w-20 h-20 mx-auto bg-primary/10 rounded-lg flex items-center justify-center mb-6 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl">supervisor_account</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 tracking-tight uppercase">Kepemimpinan</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">Visi strategis dalam mengarahkan tata kelola TI untuk mendukung tujuan institusional jangka panjang.</p>
+</div>
+<div class="text-center">
+<div class="w-20 h-20 mx-auto bg-primary/10 rounded-lg flex items-center justify-center mb-6 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl">groups</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 tracking-tight uppercase">Anggota</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">Ekosistem kolaboratif peneliti dan praktisi yang berfokus pada inovasi infrastruktur berkelanjutan.</p>
+</div>
+<div class="text-center">
+<div class="w-20 h-20 mx-auto bg-primary/10 rounded-lg flex items-center justify-center mb-6 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl">handshake</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 tracking-tight uppercase">Kolaborasi</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">Membangun sinergi dengan industri dan institusi global untuk pengembangan ekosistem TI.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Image Call to Action -->
+<section class="py-24 px-8">
+<div class="max-w-7xl mx-auto glass-card p-1 relative overflow-hidden group">
+<img alt="Infrastructure" class="w-full h-96 object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" data-alt="Digital network globe illustration with interconnected blue and mint light lines representing global IT infrastructure connectivity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCMdPLVeKIsMdk1lPlSiYJEFYWns7sAq9Q_AgmJnYkMMUlHl1lSMAMMLJqdbzYJpQUCVnM1rPE02t1TGQdGYfKM3nBDzecJHourXLfJcntYX7Rli9ArX2UxqJWr7FrYFuymUsm6ZYgWWgp8BznoLFD19VNRBKvpkkH3uV0q5x5UVArhmTQUQDbxnfaBkvYoWed2RpWsWG4LsuroPvQZLmjMnEyfhG5pq8h25vNe68eQAIyEww9RQ-ihIBrHONXH9QPwENd9wvrdYeX"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
+<h2 class="font-headline text-3xl md:text-5xl font-bold mb-6 tracking-tighter text-center px-4">SIAP MEMBANGUN MASA DEPAN INFRASTRUKTUR?</h2>
+<button class="bg-primary-container text-on-primary-container px-10 py-4 rounded-sm font-label font-bold tracking-widest glow-primary transition-all hover:scale-105">
+                        BERGABUNG DENGAN KAMI
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#070809] w-full py-12 px-8 border-t border-[#3ECFB2]/15">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 w-full max-w-7xl mx-auto">
+<div class="font-['Space_Grotesk'] font-bold text-[#e3e2e3] text-2xl tracking-widest">
+                TKITI
+            </div>
+<div class="flex gap-8 flex-wrap justify-center">
+<a class="text-[#e3e2e3]/40 font-['JetBrains_Mono'] text-xs uppercase tracking-widest hover:text-[#3ECFB2] hover:tracking-widest transition-all duration-300" href="#">SEJARAH</a>
+<a class="text-[#e3e2e3]/40 font-['JetBrains_Mono'] text-xs uppercase tracking-widest hover:text-[#3ECFB2] hover:tracking-widest transition-all duration-300" href="#">KEGIATAN</a>
+<a class="text-[#e3e2e3]/40 font-['JetBrains_Mono'] text-xs uppercase tracking-widest hover:text-[#3ECFB2] hover:tracking-widest transition-all duration-300" href="#">STRUKTUR</a>
+<a class="text-[#e3e2e3]/40 font-['JetBrains_Mono'] text-xs uppercase tracking-widest hover:text-[#3ECFB2] hover:tracking-widest transition-all duration-300" href="#">GALLERY</a>
+<a class="text-[#e3e2e3]/40 font-['JetBrains_Mono'] text-xs uppercase tracking-widest hover:text-[#3ECFB2] hover:tracking-widest transition-all duration-300" href="#">KONTAK</a>
+</div>
+<div class="text-[#e3e2e3]/60 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-center md:text-right">
+                © 2024 DEPARTEMEN SISTEM INFORMASI<br/>
+<span class="text-primary/40">SYSTEM VERSION 1.0.4-STABLE</span>
+</div>
+</div>
+</footer>
+</body></html>

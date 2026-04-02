@@ -1,0 +1,42 @@
+name: Deploy Backend to Self-hosted Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy files to deployment directory
+        run: |
+          rsync -av --delete \
+            --exclude='data/' \
+            --exclude='uploads/' \
+            backend/ /www/wwwroot/tkiti-web-profile/
+
+      - name: Build Docker image
+        working-directory: /www/wwwroot/tkiti-web-profile
+        run: docker compose build --no-cache
+
+      - name: Restart containers
+        working-directory: /www/wwwroot/tkiti-web-profile
+        run: docker compose up -d --remove-orphans
+
+      - name: Clean up old Docker images
+        run: docker image prune -f
+
+      - name: Health check
+        run: |
+          for i in 1 2 3; do
+            sleep 5
+            curl -f https://api.tkiti.tech/health && exit 0
+            echo "Attempt $i failed, retrying..."
+          done
+          echo "Health check failed after 3 attempts" && exit 1
