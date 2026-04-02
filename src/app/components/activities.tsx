@@ -1,8 +1,12 @@
 import { motion } from "motion/react";
+import { useContent } from "../hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function Activities() {
+  const { data } = useContent("kegiatan");
+  const sectionLabel = data["kegiatan.section_label"] ?? "//KEGIATAN_LAB";
+  const sectionTitle = data["kegiatan.title"] ?? "CORE CAPABILITIES";
   const activities = [
     {
       id: "001",
@@ -69,7 +73,7 @@ export function Activities() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1, ease }}
           >
-            //KEGIATAN_LAB
+            {sectionLabel}
           </motion.h2>
           <motion.h3
             className="font-bold"
@@ -82,7 +86,7 @@ export function Activities() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2, ease }}
           >
-            CORE CAPABILITIES
+            {sectionTitle}
           </motion.h3>
         </div>
         <motion.div

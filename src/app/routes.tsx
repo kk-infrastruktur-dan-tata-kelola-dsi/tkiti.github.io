@@ -77,6 +77,26 @@ export const router = createBrowserRouter(
       path: "/article/:slug",
       element: <Layout><ArticleDetail /></Layout>,
     },
+    {
+      path: "/sejarah",
+      element: <Layout><Home /></Layout>,
+    },
+    {
+      path: "/kegiatan",
+      element: <Layout><Home /></Layout>,
+    },
+    {
+      path: "/struktur",
+      element: <Layout><Home /></Layout>,
+    },
+    {
+      path: "/gallery",
+      element: <Layout><Home /></Layout>,
+    },
+    {
+      path: "/kontak",
+      element: <Layout><Home /></Layout>,
+    },
 
     // ─── Admin routes (layout & theme terpisah dari landing page) ───────────────
     {

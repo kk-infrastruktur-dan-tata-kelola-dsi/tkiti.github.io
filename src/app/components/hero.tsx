@@ -1,9 +1,20 @@
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useContent } from "../hooks/useContent";
 
 const heroEase = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function Hero() {
+  const { data } = useContent("hero");
+  const subtitle = data["hero.subtitle"] ?? "SISTEM INFORMASI · UNIVERSITAS ANDALAS";
+  const title = data["hero.title"] ?? "Laboratorium Tata Kelola &";
+  const highlight = data["hero.highlight"] ?? "Infrastruktur Teknologi Informasi";
+  const description =
+    data["hero.description"] ??
+    "Kelompok keahlian yang memetakan secara mendalam berbagai aspek infrastruktur teknologi informasi — dari perancangan jaringan, konfigurasi server, hingga deployment aplikasi dan layanan web.";
+  const ctaPrimary = data["hero.cta_primary"] ?? "Mulai Eksplorasi";
+  const ctaSecondary = data["hero.cta_secondary"] ?? "Pelajari Sejarah";
+
   return (
     <section className="relative flex flex-col items-center justify-center px-6 text-center overflow-hidden min-h-[70vh] py-12">
       {/* Background Image */}
@@ -35,7 +46,7 @@ export function Hero() {
             color: '#61eccd',
           }}
         >
-          SISTEM INFORMASI · UNIVERSITAS ANDALAS
+          {subtitle}
         </motion.p>
 
         <motion.h1
@@ -51,7 +62,7 @@ export function Hero() {
             color: '#e3e2e3',
           }}
         >
-          Laboratorium Tata Kelola & <br />
+          {title} <br />
           <motion.span
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -59,7 +70,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.5 }}
             style={{ color: '#3ECFB2' }}
           >
-            Infrastruktur Teknologi Informasi
+            {highlight}
           </motion.span>
         </motion.h1>
 
@@ -74,7 +85,7 @@ export function Hero() {
             color: '#bbcac4',
           }}
         >
-          Kelompok keahlian yang memetakan secara mendalam berbagai aspek infrastruktur teknologi informasi — dari perancangan jaringan, konfigurasi server, hingga deployment aplikasi dan layanan web.
+          {description}
         </motion.p>
 
         <motion.div
@@ -96,7 +107,7 @@ export function Hero() {
             whileHover={{ y: -3, boxShadow: '0 0 50px rgba(62, 207, 178, 0.25)' }}
             transition={{ duration: 0.25 }}
           >
-            Mulai Eksplorasi
+            {ctaPrimary}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -113,7 +124,7 @@ export function Hero() {
             whileHover={{ y: -3, backgroundColor: '#292a2b' }}
             transition={{ duration: 0.25 }}
           >
-            Pelajari Sejarah
+            {ctaSecondary}
           </motion.button>
         </motion.div>
       </div>

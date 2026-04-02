@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { apiRequest } from "../lib/api";
-import { API_URL } from "../lib/api";
+import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -45,12 +44,9 @@ function ArticleCard({ article }: { article: Article }) {
   const authorName = article.author_name ?? article.author ?? "Admin TKITI";
   const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
   const thumbnailRaw = article.thumbnail_url ?? article.thumbnail ?? null;
-  const thumbnailUrl = thumbnailRaw
-    ? thumbnailRaw.startsWith("http")
-      ? thumbnailRaw
-      : `${API_URL}/${thumbnailRaw.replace(/^\//, "")}`
-    : null;
+  const thumbnailUrl = toAbsoluteApiUrl(thumbnailRaw);
   const category = article.category ?? "Artikel";
+  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null);
 
   return (
     <motion.article
@@ -136,7 +132,7 @@ function ArticleCard({ article }: { article: Article }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="w-8 h-8 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-                <AvatarImage src={article.author_avatar || undefined} alt={authorName} />
+                <AvatarImage src={authorAvatar || undefined} alt={authorName} />
                 <AvatarFallback
                   style={{
                     background: "rgba(62, 207, 178, 0.1)",
@@ -196,6 +192,10 @@ function ArticleCard({ article }: { article: Article }) {
 export function Articles() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   useEffect(() => {
     async function fetchArticles() {

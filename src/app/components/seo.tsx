@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { SITE_URL } from "../lib/api";
 
 interface SEOProps {
   title?: string;
@@ -14,7 +15,7 @@ interface SEOProps {
 const DEFAULT_TITLE = "Lab TKITI — Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi";
 const DEFAULT_DESCRIPTION = "Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi — Fokus pada riset, pengembangan, dan implementasi teknologi informasi di Departemen Sistem Informasi, Fakultas Teknologi Informasi, Universitas Andalas.";
 const DEFAULT_IMAGE = `${import.meta.env.BASE_URL}images/logo.png`;
-const DEFAULT_URL = "https://tkiti.unand.ac.id";
+const DEFAULT_URL = SITE_URL;
 const SITE_NAME = "Laboratorium TKITI";
 const TWITTER_HANDLE = "@lab_TATI";
 
@@ -31,7 +32,7 @@ export function SEO({
   const seoTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   const seoDescription = description || DEFAULT_DESCRIPTION;
   const seoImage = image || DEFAULT_IMAGE;
-  const seoUrl = url || DEFAULT_URL;
+  const seoUrl = url ? (url.startsWith("http") ? url : `${DEFAULT_URL}${url.startsWith("/") ? url : `/${url}`}`) : DEFAULT_URL;
   const fullImageUrl = seoImage.startsWith("http") ? seoImage : `${DEFAULT_URL}${seoImage}`;
 
   // JSON-LD Structured Data for Organization

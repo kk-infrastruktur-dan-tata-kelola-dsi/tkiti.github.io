@@ -1,9 +1,22 @@
 import { Link, useLocation, useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
 
 export function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  const navItems = useMemo(
+    () => [
+      { label: "Sejarah", id: "sejarah" },
+      { label: "Kegiatan", id: "kegiatan" },
+      { label: "Struktur", id: "struktur" },
+      { label: "Gallery", id: "gallery" },
+      { label: "Kontak", id: "kontak" },
+    ],
+    [],
+  );
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -13,6 +26,7 @@ export function Navigation() {
       const element = document.getElementById(sectionId);
       if (element) {
         const offsetTop = element.offsetTop - 80; // Account for fixed navbar height
+        setActiveSection(sectionId);
         window.scrollTo({
           top: offsetTop,
           behavior: 'smooth'
@@ -25,6 +39,7 @@ export function Navigation() {
         const element = document.getElementById(sectionId);
         if (element) {
           const offsetTop = element.offsetTop - 80;
+          setActiveSection(sectionId);
           window.scrollTo({
             top: offsetTop,
             behavior: 'smooth'
@@ -33,6 +48,26 @@ export function Navigation() {
       }, 100);
     }
   };
+
+  useEffect(() => {
+    if (location.pathname !== "/") return;
+    const sections = navItems
+      .map((item) => document.getElementById(item.id))
+      .filter(Boolean) as HTMLElement[];
+
+    const onScroll = () => {
+      const marker = window.scrollY + 120;
+      let current = "";
+      for (const section of sections) {
+        if (marker >= section.offsetTop) current = section.id;
+      }
+      setActiveSection(current);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [location.pathname, navItems]);
 
   return (
     <nav 
@@ -54,54 +89,21 @@ export function Navigation() {
         </Link>
 
         <div className="hidden md:flex items-center gap-12">
-          <a 
-            href="#sejarah"
-            onClick={(e) => handleSectionClick(e, 'sejarah')}
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: 'rgba(227, 226, 227, 0.6)',
-            }}
-          >
-            Sejarah
-          </a>
-          <a 
-            href="#kegiatan"
-            onClick={(e) => handleSectionClick(e, 'kegiatan')}
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: 'rgba(227, 226, 227, 0.6)',
-            }}
-          >
-            Kegiatan
-          </a>
-          <a 
-            href="#struktur"
-            onClick={(e) => handleSectionClick(e, 'struktur')}
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: 'rgba(227, 226, 227, 0.6)',
-            }}
-          >
-            Struktur
-          </a>
-          <a 
-            href="#gallery"
-            onClick={(e) => handleSectionClick(e, 'gallery')}
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: 'rgba(227, 226, 227, 0.6)',
-            }}
-          >
-            Gallery
-          </a>
+          {navItems.slice(0, 4).map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              onClick={(e) => handleSectionClick(e, item.id)}
+              className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '14px',
+                color: location.pathname === "/" && activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
           <Link 
             to="/article" 
             className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
@@ -113,14 +115,14 @@ export function Navigation() {
           >
             Article
           </Link>
-          <a 
+          <a
             href="#kontak"
             onClick={(e) => handleSectionClick(e, 'kontak')}
             className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
             style={{
               fontFamily: 'JetBrains Mono, monospace',
               fontSize: '14px',
-              color: 'rgba(227, 226, 227, 0.6)',
+              color: location.pathname === "/" && activeSection === "kontak" ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
             }}
           >
             Kontak

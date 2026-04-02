@@ -1,19 +1,10 @@
 # Robots.txt for Lab TKITI
-# https://tkiti.unand.ac.id
+# https://tkiti.tech
 
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://tkiti.unand.ac.id/sitemap.xml
-
-# Crawl-delay (optional, polite crawling)
-Crawl-delay: 1
-
-# Allow all resources
-Allow: /images/
-Allow: /static/
-Allow: /assets/
+Sitemap: https://tkiti.tech/sitemap.xml
 
 # Disallow admin panel from indexing
 Disallow: /admin/

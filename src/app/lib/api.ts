@@ -1,4 +1,5 @@
 export const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000').replace(/\/$/, '')
+export const SITE_URL = ((import.meta.env.VITE_SITE_URL as string | undefined) ?? 'https://tkiti.tech').replace(/\/$/, '')
 
 type ApiResponse<T = unknown> = {
   success: boolean
@@ -67,4 +68,10 @@ export async function apiRequest<T = unknown>(
   }
 
   return res.json() as Promise<ApiResponse<T>>
+}
+
+export function toAbsoluteApiUrl(path?: string | null): string | null {
+  if (!path) return null
+  if (/^https?:\/\//i.test(path)) return path
+  return `${API_URL}/${path.replace(/^\/+/, '')}`
 }

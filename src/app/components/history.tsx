@@ -1,8 +1,11 @@
 import { motion } from "motion/react";
+import { useContent } from "../hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function History() {
+  const { data } = useContent("sejarah");
+  const sectionLabel = data["sejarah.section_label"] ?? "[01_SEJARAH]";
   const timeline = [
     {
       year: "2010",
@@ -37,7 +40,7 @@ export function History() {
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.7, ease }}
       >
-        [01_SEJARAH]
+        {sectionLabel}
       </motion.h2>
 
       <div className="relative">

@@ -3,8 +3,7 @@ import { useParams } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { apiRequest } from "../lib/api";
-import { API_URL } from "../lib/api";
+import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { ReadingProgressBar } from "../components/reading-progress-bar";
 import { LikeButton } from "../components/like-button";
 import { ShareButton } from "../components/share-button";
@@ -71,6 +70,10 @@ export function ArticleDetail() {
     }
   }, [slug]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [slug]);
+
   if (loading) {
     return (
       <article className="min-h-screen pt-24 px-6">
@@ -117,11 +120,8 @@ export function ArticleDetail() {
   const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
   const category = article.category ?? "Artikel";
   const thumbnailRaw = article.thumbnail_url ?? article.thumbnail ?? null;
-  const thumbnailUrl = thumbnailRaw
-    ? thumbnailRaw.startsWith("http")
-      ? thumbnailRaw
-      : `${API_URL}/${thumbnailRaw.replace(/^\//, "")}`
-    : null;
+  const thumbnailUrl = toAbsoluteApiUrl(thumbnailRaw);
+  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null);
 
   return (
     <>
@@ -184,7 +184,7 @@ export function ArticleDetail() {
         {/* Author Info */}
         <div className="flex items-center gap-3 mb-6">
           <Avatar className="w-10 h-10 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-            <AvatarImage src={article.author_avatar || undefined} alt={authorName} />
+            <AvatarImage src={authorAvatar || undefined} alt={authorName} />
             <AvatarFallback
               style={{
                 background: "rgba(62, 207, 178, 0.1)",

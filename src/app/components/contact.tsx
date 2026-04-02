@@ -1,32 +1,42 @@
 import { motion } from "motion/react";
+import { useContent } from "../hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function Contact() {
+  const { data } = useContent("kontak");
+  const sectionLabel = data["kontak.section_label"] ?? "//KONTAK";
+  const sectionTitle = data["kontak.title"] ?? "HUBUNGI KAMI";
+  const email = data["kontak.email"] ?? "labtisi.si@gmail.com";
+  const instagram = data["kontak.instagram"] ?? "@lab_TATI";
+  const linkedin = data["kontak.linkedin"] ?? "Lab TKITI";
+  const alamat =
+    data["kontak.alamat"] ??
+    "Gedung Teknologi Informasi, Lantai 2\nDepartemen Sistem Informasi\nFakultas Teknologi Informasi";
+  const jam = data["kontak.jam"] ?? "Senin – Jumat, 08.00 – 17.00";
+  const alamatLines = alamat.split("\n").map((v) => v.trim()).filter(Boolean);
   const contactInfo = [
     {
       icon: "location_on",
       title: "Lokasi",
-      details: [
-        "Gedung Teknologi Informasi, Lantai 2",
-        "Departemen Sistem Informasi",
-        "Fakultas Teknologi Informasi"
-      ],
+        details: [
+        ...alamatLines
+        ],
     },
     {
       icon: "email",
       title: "Kontak",
-      details: [
-        "Email: labtisi.si@gmail.com",
-        "Instagram: @lab_TATI",
-        "LinkedIn: Lab TKITI"
-      ],
+        details: [
+        `Email: ${email}`,
+        `Instagram: ${instagram}`,
+        `LinkedIn: ${linkedin}`
+        ],
     },
     {
       icon: "schedule",
       title: "Jam Operasional",
-      details: [
-        "Senin – Jumat, 08.00 – 17.00",
+        details: [
+        jam,
         "Praktikum sesuai jadwal kuliah",
         "Konsultasi: booking terlebih dahulu"
       ],
@@ -54,7 +64,7 @@ export function Contact() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1, ease }}
           >
-            //KONTAK
+            {sectionLabel}
           </motion.h2>
           <motion.h3
             className="font-bold"
@@ -67,7 +77,7 @@ export function Contact() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2, ease }}
           >
-            HUBUNGI KAMI
+            {sectionTitle}
           </motion.h3>
         </div>
       </motion.div>
