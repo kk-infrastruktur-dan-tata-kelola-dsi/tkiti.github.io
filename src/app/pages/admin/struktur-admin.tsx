@@ -67,10 +67,9 @@ type MasterForm = {
   role: string
   parentMasterId: string
   urutan: string
-  divisi: string
   single: boolean
 }
-const EMPTY_MASTER_FORM: MasterForm = { role: '', parentMasterId: '', urutan: '', divisi: '', single: false }
+const EMPTY_MASTER_FORM: MasterForm = { role: '', parentMasterId: '', urutan: '', single: false }
 
 export function AdminStruktur() {
   const [items, setItems] = useState<Anggota[]>([])
@@ -204,7 +203,6 @@ export function AdminStruktur() {
       role: node.role,
       parentMasterId: node.parentMasterId ? String(node.parentMasterId) : '',
       urutan: String(node.urutan),
-      divisi: node.divisi ?? '',
       single: node.single,
     })
     setMasterDialogOpen(true)
@@ -227,7 +225,7 @@ export function AdminStruktur() {
         role: masterForm.role.trim(),
         parentMasterId: masterForm.parentMasterId ? Number(masterForm.parentMasterId) : null,
         urutan,
-        divisi: masterForm.divisi.trim() || null,
+        divisi: editingMasterId ? (template.find((node) => node.id === editingMasterId)?.divisi ?? null) : null,
         single: masterForm.single,
       }),
     })
@@ -724,15 +722,9 @@ export function AdminStruktur() {
                   ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label>Urutan</Label>
-                <Input type="number" value={masterForm.urutan} onChange={(e) => setMasterForm((prev) => ({ ...prev, urutan: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Divisi</Label>
-                <Input value={masterForm.divisi} onChange={(e) => setMasterForm((prev) => ({ ...prev, divisi: e.target.value }))} placeholder="kepemimpinan / anggota / kolaborasi" />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Urutan</Label>
+              <Input type="number" value={masterForm.urutan} onChange={(e) => setMasterForm((prev) => ({ ...prev, urutan: e.target.value }))} />
             </div>
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input

@@ -64,8 +64,8 @@ function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact
               {initials || "?"}
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-[10px] uppercase tracking-wide" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
+          <div className="min-w-0 max-w-[260px]">
+            <p className="whitespace-normal break-words text-[10px] uppercase tracking-wide" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
               {node.role}
             </p>
             <p
