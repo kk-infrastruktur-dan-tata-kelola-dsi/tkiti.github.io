@@ -7,50 +7,30 @@ export function Activities() {
   const { data } = useContent("kegiatan");
   const sectionLabel = data["kegiatan.section_label"] ?? "//KEGIATAN_LAB";
   const sectionTitle = data["kegiatan.title"] ?? "CORE CAPABILITIES";
-  const activities = [
-    {
-      id: "001",
-      icon: "memory",
-      title: "Perawatan Komputer Laboratorium",
-      tag: "Hardware & Software",
-      description: "Pemeliharaan rutin, pengecekan hardware, update software, dan optimasi performa seluruh komputer di laboratorium untuk memastikan kesiapan operasional harian.",
-    },
-    {
-      id: "002",
-      icon: "layers",
-      title: "Manajemen Virtualisasi (Proxmox)",
-      tag: "Virtualisasi",
-      description: "Pemantauan performa, serta optimasi resource pada platform Proxmox VE — termasuk manajemen VM, container, dan alokasi jaringan virtual untuk mendukung riset dan praktikum.",
-    },
-    {
-      id: "003",
-      icon: "hub",
-      title: "Manajemen Jaringan & Server",
-      tag: "Networking",
-      description: "Perancangan, konfigurasi, dan pemantauan jaringan komputer, administrasi server Linux, serta pengelolaan layanan web dan aplikasi berbasis cloud maupun on-premise.",
-    },
-    {
-      id: "004",
-      icon: "shield",
-      title: "Keamanan & Audit Sistem",
-      tag: "Security",
-      description: "Evaluasi kerentanan sistem, penetration testing dasar, konfigurasi firewall, serta audit kepatuhan untuk memastikan keamanan infrastruktur laboratorium.",
-    },
-    {
-      id: "005",
-      icon: "insights",
-      title: "Monitoring & Observability",
-      tag: "Monitoring",
-      description: "Pemantauan real-time performa server, jaringan, dan layanan menggunakan dashboard monitoring untuk mendeteksi anomali dan memastikan uptime maksimal.",
-    },
-    {
-      id: "006",
-      icon: "school",
-      title: "Pelatihan & Asistensi Praktikum",
-      tag: "Edukasi",
-      description: "Mendukung kegiatan praktikum mahasiswa, membimbing penggunaan tools teknis, serta menyelenggarakan workshop singkat terkait infrastruktur dan tata kelola TI.",
-    },
-  ];
+  const activities = Array.from({ length: 6 }, (_, index) => {
+    const id = String(index + 1).padStart(3, "0");
+    return {
+      id: data[`kegiatan.card${index + 1}.id`] ?? id,
+      icon: data[`kegiatan.card${index + 1}.icon`] ?? ["memory", "layers", "hub", "shield", "insights", "school"][index],
+      title: data[`kegiatan.card${index + 1}.title`] ?? [
+        "Perawatan Komputer Laboratorium",
+        "Manajemen Virtualisasi (Proxmox)",
+        "Manajemen Jaringan & Server",
+        "Keamanan & Audit Sistem",
+        "Monitoring & Observability",
+        "Pelatihan & Asistensi Praktikum",
+      ][index],
+      tag: data[`kegiatan.card${index + 1}.tag`] ?? ["Hardware & Software", "Virtualisasi", "Networking", "Security", "Monitoring", "Edukasi"][index],
+      description: data[`kegiatan.card${index + 1}.description`] ?? [
+        "Pemeliharaan rutin, pengecekan hardware, update software, dan optimasi performa seluruh komputer di laboratorium untuk memastikan kesiapan operasional harian.",
+        "Pemantauan performa, serta optimasi resource pada platform Proxmox VE — termasuk manajemen VM, container, dan alokasi jaringan virtual untuk mendukung riset dan praktikum.",
+        "Perancangan, konfigurasi, dan pemantauan jaringan komputer, administrasi server Linux, serta pengelolaan layanan web dan aplikasi berbasis cloud maupun on-premise.",
+        "Evaluasi kerentanan sistem, penetration testing dasar, konfigurasi firewall, serta audit kepatuhan untuk memastikan keamanan infrastruktur laboratorium.",
+        "Pemantauan real-time performa server, jaringan, dan layanan menggunakan dashboard monitoring untuk mendeteksi anomali dan memastikan uptime maksimal.",
+        "Mendukung kegiatan praktikum mahasiswa, membimbing penggunaan tools teknis, serta menyelenggarakan workshop singkat terkait infrastruktur dan tata kelola TI.",
+      ][index],
+    };
+  });
 
   return (
     <section id="kegiatan" className="py-10 px-6 max-w-6xl mx-auto">

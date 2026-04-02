@@ -6,26 +6,18 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const;
 export function History() {
   const { data } = useContent("sejarah");
   const sectionLabel = data["sejarah.section_label"] ?? "[01_SEJARAH]";
-  const timeline = [
-    {
-      year: "2010",
-      title: "Awal Berdiri",
-      subtitle: "Pendirian Laboratorium",
-      description: "Laboratorium Tata Kelola dan Infrastruktur Teknologi Informasi didirikan di Departemen Sistem Informasi, Fakultas Teknologi Informasi, sebagai respons atas kebutuhan pengelolaan infrastruktur IT yang terstruktur.",
-    },
-    {
-      year: "2015–2018",
-      title: "Perubahan Nama & Pengembangan",
-      subtitle: "",
-      description: "Laboratorium mengalami perubahan nama menjadi Laboratorium Dasar Komputer (LDKDM), kemudian berkembang menjadi LDKTIS. Angkatan ini mulai membangun kegiatan praktikum dan riset dalam bidang komputer.",
-    },
-    {
-      year: "2024",
-      title: "Era TKITI",
-      subtitle: "Saat Ini",
-      description: "Pada semester gasal tahun 2024, terjadi perubahan besar dalam susunan organisasi jabatan. Lab diperkuat oleh pembina dan pengurus yang memiliki spesialisasi teknik masing-masing, dengan visi menjadi laboratorium benchmark dalam pengelolaan infrastruktur teknologi informasi.",
-    },
-  ];
+  const timeline = Array.from({ length: 3 }, (_, index) => ({
+    year: data[`sejarah.item${index + 1}.year`] ?? ["2010", "2015–2018", "2024"][index],
+    title: data[`sejarah.item${index + 1}.title`] ?? ["Awal Berdiri", "Perubahan Nama & Pengembangan", "Era TKITI"][index],
+    subtitle: data[`sejarah.item${index + 1}.subtitle`] ?? ["Pendirian Laboratorium", "", "Saat Ini"][index],
+    description:
+      data[`sejarah.item${index + 1}.description`] ??
+      [
+        "Laboratorium Tata Kelola dan Infrastruktur Teknologi Informasi didirikan di Departemen Sistem Informasi, Fakultas Teknologi Informasi, sebagai respons atas kebutuhan pengelolaan infrastruktur IT yang terstruktur.",
+        "Laboratorium mengalami perubahan nama menjadi Laboratorium Dasar Komputer (LDKDM), kemudian berkembang menjadi LDKTIS. Angkatan ini mulai membangun kegiatan praktikum dan riset dalam bidang komputer.",
+        "Pada semester gasal tahun 2024, terjadi perubahan besar dalam susunan organisasi jabatan. Lab diperkuat oleh pembina dan pengurus yang memiliki spesialisasi teknik masing-masing, dengan visi menjadi laboratorium benchmark dalam pengelolaan infrastruktur teknologi informasi.",
+      ][index],
+  }));
 
   return (
     <section id="sejarah" className="py-10 px-6 max-w-4xl mx-auto">

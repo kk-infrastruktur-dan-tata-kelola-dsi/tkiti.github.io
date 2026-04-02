@@ -45,7 +45,7 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.24, ease: heroEase }}
           className="font-bold tracking-tighter mb-6"
           style={{
-            fontFamily: 'Space Grotesk, sans-serif',
+            fontFamily: 'JetBrains Mono, monospace',
             fontSize: 'clamp(40px, 7vw, 80px)',
             lineHeight: 1.1,
             color: '#e3e2e3',
@@ -70,6 +70,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.36, ease: heroEase }}
           className="max-w-2xl mx-auto mb-8 leading-relaxed"
           style={{
+            fontFamily: 'JetBrains Mono, monospace',
             fontSize: 'clamp(16px, 2vw, 20px)',
             color: '#bbcac4',
           }}

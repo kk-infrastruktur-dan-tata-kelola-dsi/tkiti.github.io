@@ -1,7 +1,12 @@
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useContent } from "../hooks/useContent";
 
 export function ImageCTA() {
+  const { data } = useContent("cta");
+  const image = data["cta.image"] ?? "https://images.unsplash.com/photo-1631358429403-25d69fb4ce24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWdpdGFsJTIwbmV0d29yayUyMGdsb2JlJTIwdGVjaG5vbG9neSUyMGluZnJhc3RydWN0dXJlfGVufDF8fHx8MTc3NDk1MzU0MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+  const title = data["cta.title"] ?? "SIAP MEMBANGUN MASA DEPAN INFRASTRUKTUR?";
+  const button = data["cta.button"] ?? "BERGABUNG DENGAN KAMI";
   return (
     <section className="py-10 px-6">
       <motion.div 
@@ -17,7 +22,7 @@ export function ImageCTA() {
         transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         <ImageWithFallback
-          src="https://images.unsplash.com/photo-1631358429403-25d69fb4ce24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWdpdGFsJTIwbmV0d29yayUyMGdsb2JlJTIwdGVjaG5vbG9neSUyMGluZnJhc3RydWN0dXJlfGVufDF8fHx8MTc3NDk1MzU0MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+          src={image}
           alt="Infrastructure"
           className="w-full h-96 object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
         />
@@ -40,7 +45,7 @@ export function ImageCTA() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            SIAP MEMBANGUN MASA DEPAN INFRASTRUKTUR?
+            {title}
           </motion.h2>
 
           <motion.button 
@@ -62,7 +67,7 @@ export function ImageCTA() {
             }}
             whileTap={{ scale: 0.95 }}
           >
-            BERGABUNG DENGAN KAMI
+            {button}
           </motion.button>
         </div>
       </motion.div>

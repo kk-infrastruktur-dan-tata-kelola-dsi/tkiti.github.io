@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Upload, Trash2, ImageIcon, X } from 'lucide-react'
+import { Upload, ImageIcon, X, GripVertical } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -23,9 +23,9 @@ export function AdminGallery() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [draggedId, setDraggedId] = useState<number | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Upload form state
   const [caption, setCaption] = useState('')
   const [tanggal, setTanggal] = useState('')
   const [urutan, setUrutan] = useState('')
@@ -37,6 +37,20 @@ export function AdminGallery() {
   }
 
   useEffect(() => { fetchGallery() }, [])
+
+  async function persistOrder(nextItems: GalleryItem[]) {
+    const ids = nextItems.map((item) => item.id)
+    const res = await apiRequest<GalleryItem[]>('/gallery/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    })
+    if (res.success && res.data) {
+      setItems(res.data)
+    } else {
+      toast.error(res.error ?? 'Gagal menyimpan urutan gallery')
+      await fetchGallery()
+    }
+  }
 
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return
@@ -67,6 +81,7 @@ export function AdminGallery() {
     setUrutan('')
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
+    fetchGallery()
   }
 
   async function handleDelete(id: number) {
@@ -79,86 +94,66 @@ export function AdminGallery() {
     }
   }
 
-  const onDrop = useCallback((e: React.DragEvent) => {
+  const onDropUpload = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
     handleUpload(e.dataTransfer.files)
   }, [caption, tanggal, urutan])
 
+  async function handleDropReorder(targetId: number) {
+    if (draggedId === null || draggedId === targetId) return
+    const current = [...items]
+    const fromIndex = current.findIndex((i) => i.id === draggedId)
+    const toIndex = current.findIndex((i) => i.id === targetId)
+    if (fromIndex < 0 || toIndex < 0) return
+    const [moved] = current.splice(fromIndex, 1)
+    current.splice(toIndex, 0, moved)
+    setItems(current)
+    await persistOrder(current)
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Gallery</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {items.length} foto dokumentasi
-        </p>
+        <p className="text-sm text-gray-500 mt-0.5">{items.length} foto dokumentasi</p>
       </div>
 
-      {/* Upload area */}
       <Card className="border-gray-200 bg-white">
         <CardContent className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-sm">Caption</Label>
-              <Input
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Keterangan foto"
-                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-              />
+              <Label className="text-sm text-gray-700">Caption</Label>
+              <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Keterangan foto" className="bg-white text-gray-900" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">Tanggal</Label>
-              <Input
-                type="date"
-                value={tanggal}
-                onChange={(e) => setTanggal(e.target.value)}
-                className="bg-white border-gray-200 text-gray-900"
-              />
+              <Label className="text-sm text-gray-700">Tanggal</Label>
+              <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="bg-white text-gray-900" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">Urutan</Label>
-              <Input
-                type="number"
-                value={urutan}
-                onChange={(e) => setUrutan(e.target.value)}
-                placeholder="0"
-                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-              />
+              <Label className="text-sm text-gray-700">Urutan awal</Label>
+              <Input type="number" value={urutan} onChange={(e) => setUrutan(e.target.value)} placeholder="0" className="bg-white text-gray-900" />
             </div>
           </div>
 
-          {/* Drop zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={onDrop}
+            onDrop={onDropUpload}
             onClick={() => fileRef.current?.click()}
             className={cn(
               'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-              dragOver
-                ? 'border-blue-400 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400',
-              )}
+              dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400',
+            )}
           >
             <Upload className="h-8 w-8 mx-auto mb-3 text-gray-400" />
-            <p className="text-sm text-gray-600">
-              {uploading ? 'Mengupload...' : 'Drag & drop foto atau klik untuk browse'}
-            </p>
+            <p className="text-sm text-gray-600">{uploading ? 'Mengupload...' : 'Drag & drop foto atau klik untuk browse'}</p>
             <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP · maks 5MB</p>
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => handleUpload(e.target.files)}
-          />
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} />
         </CardContent>
       </Card>
 
-      {/* Gallery grid */}
       {loading ? (
         <div className="text-center py-12 text-gray-400">Memuat gallery...</div>
       ) : items.length === 0 ? (
@@ -167,59 +162,63 @@ export function AdminGallery() {
           <p className="text-gray-400">Belum ada foto</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="group relative rounded-lg overflow-hidden border border-gray-200 bg-white aspect-square"
-            >
-              <img
-                src={item.src.startsWith('http') ? item.src : `${API_URL}/${item.src.replace(/^\//, '')}`}
-                alt={item.caption ?? ''}
-                className="w-full h-full object-cover"
-              />
+        <>
+          <p className="text-xs text-gray-500">Tips: seret kartu foto (drag & drop) untuk mengatur posisi sesuka admin.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="group relative rounded-lg overflow-hidden border border-gray-200 bg-white aspect-square"
+                draggable
+                onDragStart={() => setDraggedId(item.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async () => {
+                  await handleDropReorder(item.id)
+                  setDraggedId(null)
+                }}
+              >
+                <img
+                  src={item.src.startsWith('http') ? item.src : `${API_URL}/${item.src.replace(/^\//, '')}`}
+                  alt={item.caption ?? ''}
+                  className="w-full h-full object-cover"
+                />
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end">
-                <div className="w-full p-3 translate-y-full group-hover:translate-y-0 transition-transform">
-                  {item.caption && (
-                    <p className="text-xs text-white truncate mb-1">{item.caption}</p>
-                  )}
-                  {item.tanggal && (
-                    <p className="text-xs text-white/60">{item.tanggal}</p>
-                  )}
+                <div className="absolute left-2 top-2 rounded-full bg-black/50 p-1.5 text-white opacity-80">
+                  <GripVertical className="h-3.5 w-3.5" />
                 </div>
-              </div>
 
-              {/* Delete button */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus foto?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Foto ini akan dihapus permanen dari gallery dan disk.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Hapus
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          ))}
-        </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end">
+                  <div className="w-full p-3 translate-y-full group-hover:translate-y-0 transition-transform">
+                    {item.caption && <p className="text-xs text-white truncate mb-1">{item.caption}</p>}
+                    {item.tanggal && <p className="text-xs text-white/60">{item.tanggal}</p>}
+                  </div>
+                </div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Hapus foto?</AlertDialogTitle>
+                      <AlertDialogDescription>Foto ini akan dihapus permanen dari gallery dan disk.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDelete(item.id)}>
+                        Hapus
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
 }
+

@@ -166,18 +166,6 @@ export function Navigation() {
           >
             Article
           </Link>
-          <a
-            href="#kontak"
-            onClick={(e) => handleSectionClick(e, 'kontak')}
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: activeSection === "kontak" ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
-            }}
-          >
-            Kontak
-          </a>
         </div>
 
         <button 

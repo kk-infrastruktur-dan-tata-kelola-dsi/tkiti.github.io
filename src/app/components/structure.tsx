@@ -81,7 +81,7 @@ function buildFamilyTree(members: TeamMember[], template: TemplateNode[]): Famil
   return roots;
 }
 
-function FamilyTreeNode({ node }: { node: FamilyNode }) {
+function FamilyTreeNode({ node, compact = false }: { node: FamilyNode; compact?: boolean }) {
   const initials = node.nama
     .split(" ")
     .map((part) => part[0])
@@ -97,25 +97,25 @@ function FamilyTreeNode({ node }: { node: FamilyNode }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.4, ease }}
-        className="z-10 min-w-[210px] rounded-xl border px-4 py-3"
+        className="z-10 min-w-[170px] max-w-[220px] rounded-xl border px-3 py-2.5"
         style={{
           borderColor: "rgba(62, 207, 178, 0.28)",
           background: "rgba(9, 11, 12, 0.85)",
         }}
       >
         <div className="flex items-center gap-3">
-          <Avatar className="h-11 w-11 border" style={{ borderColor: "rgba(62, 207, 178, 0.25)" }}>
+          <Avatar className="h-9 w-9 border" style={{ borderColor: "rgba(62, 207, 178, 0.25)" }}>
             <AvatarImage src={toAbsoluteApiUrl(node.photo) ?? undefined} alt={node.nama} />
             <AvatarFallback style={{ background: "rgba(62, 207, 178, 0.12)", color: "#61eccd", fontWeight: 700 }}>
               {initials || "?"}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="truncate text-xs uppercase tracking-wide" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
+            <p className="truncate text-[10px] uppercase tracking-wide" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
               {node.role}
             </p>
             <p
-              className="truncate text-sm font-semibold"
+              className="truncate text-xs font-semibold"
               style={{
                 color: isEmpty ? "rgba(227,226,227,0.45)" : "#e3e2e3",
                 fontFamily: "Space Grotesk, sans-serif",
@@ -129,19 +129,19 @@ function FamilyTreeNode({ node }: { node: FamilyNode }) {
 
       {node.children.length > 0 && (
         <>
-          <div className="h-7 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-          <ul className="relative flex flex-wrap items-start justify-center gap-x-6 gap-y-6 pt-5">
+          <div className="h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+          <ul className={compact ? "relative grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3" : "relative flex flex-wrap items-start justify-center gap-x-4 gap-y-4 pt-4"}>
             <div
               className="absolute left-1/2 top-0 h-px -translate-x-1/2"
               style={{
-                width: `calc(100% - 2rem)`,
+                width: `calc(100% - 1.5rem)`,
                 background: "rgba(62, 207, 178, 0.35)",
               }}
             />
             {node.children.map((child, index) => (
               <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
-                <div className="absolute -top-5 h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-                <FamilyTreeNode node={child} />
+                <div className="absolute -top-4 h-4 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                <FamilyTreeNode node={child} compact={compact} />
               </li>
             ))}
           </ul>
@@ -197,6 +197,8 @@ export function Structure() {
 
   const familyTree = useMemo(() => buildFamilyTree(members, template), [members, template]);
 
+  const compactTree = familyTree.length > 0 && familyTree[0].children.length > 4;
+
   return (
     <section id="struktur" className="px-6 py-14" style={{ background: "rgba(27, 28, 29, 0.3)" }}>
       <div className="mx-auto max-w-6xl">
@@ -239,7 +241,7 @@ export function Structure() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, ease }}
-          className="overflow-x-auto rounded-2xl border p-6 md:p-8"
+          className="rounded-2xl border p-4 md:p-6"
           style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
         >
           {loading ? (
@@ -247,9 +249,9 @@ export function Structure() {
               Memuat struktur organisasi...
             </p>
           ) : familyTree.length > 0 ? (
-            <ul className="flex min-w-max justify-center pb-2">
+            <ul className="flex justify-center pb-1">
               {familyTree.map((root, index) => (
-                <FamilyTreeNode key={`${root.role}-${index}`} node={root} />
+                <FamilyTreeNode key={`${root.role}-${index}`} node={root} compact={compactTree} />
               ))}
             </ul>
           ) : (

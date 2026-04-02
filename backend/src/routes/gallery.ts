@@ -48,6 +48,30 @@ galleryRoutes.post('/', authMiddleware, async (c) => {
   return c.json({ success: true, data: inserted }, 201)
 })
 
+// PUT /gallery/reorder [AUTH] — update posisi urutan drag-drop
+galleryRoutes.put('/reorder', authMiddleware, async (c) => {
+  const payload = await c.req.json<{ ids?: number[] }>().catch(() => null)
+  const ids = payload?.ids
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return c.json({ success: false, error: 'Payload ids wajib berupa array' }, 400)
+  }
+
+  const rows = db.select().from(gallery).all()
+  const existingIds = new Set(rows.map((r) => r.id))
+  if (ids.some((id) => !existingIds.has(id))) {
+    return c.json({ success: false, error: 'Terdapat id foto yang tidak valid' }, 400)
+  }
+
+  db.transaction((tx) => {
+    ids.forEach((id, index) => {
+      tx.update(gallery).set({ urutan: index + 1 }).where(eq(gallery.id, id)).run()
+    })
+  })
+
+  const updated = db.select().from(gallery).orderBy(asc(gallery.urutan), asc(gallery.id)).all()
+  return c.json({ success: true, data: updated })
+})
+
 // DELETE /gallery/:id [AUTH] — hapus dari DB dan file dari disk
 galleryRoutes.delete('/:id', authMiddleware, async (c) => {
   const id = Number(c.req.param('id'))
