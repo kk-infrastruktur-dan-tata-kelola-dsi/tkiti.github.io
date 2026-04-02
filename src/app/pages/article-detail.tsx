@@ -135,7 +135,7 @@ export function ArticleDetail() {
         publishedTime={publishedAt}
         author={authorName}
       />
-      <article className="min-h-screen pt-24 px-6">
+      <article className="min-h-screen px-6 pb-20 pt-24">
       <ReadingProgressBar />
 
       {/* Floating Like Button (Desktop) */}
@@ -143,7 +143,18 @@ export function ArticleDetail() {
         <LikeButton articleId={article.id} initialLikes={article.likes} />
       </div>
 
-      <div className="max-w-[680px] mx-auto">
+      <div className="mx-auto max-w-[760px]">
+        <div className="mb-8">
+          <Link
+            to="/article"
+            className="inline-flex items-center gap-2 text-sm hover:opacity-80"
+            style={{ color: "#89bdb1", fontFamily: "JetBrains Mono, monospace" }}
+          >
+            <ArrowLeft size={14} />
+            Semua artikel
+          </Link>
+        </div>
+
         {/* Category Badge */}
         <span
           className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-6"
@@ -161,7 +172,7 @@ export function ArticleDetail() {
           className="font-bold mb-4"
           style={{
             fontFamily: "Space Grotesk, sans-serif",
-            fontSize: "clamp(32px, 5vw, 40px)",
+            fontSize: "clamp(36px, 5vw, 52px)",
             lineHeight: 1.2,
             color: "#e3e2e3",
           }}
@@ -172,10 +183,10 @@ export function ArticleDetail() {
         {/* Subtitle */}
         {article.subtitle && (
           <p
-            className="text-lg mb-6"
+            className="mb-7 text-xl"
             style={{
-              color: "#889994",
-              lineHeight: 1.6,
+              color: "rgba(227, 226, 227, 0.72)",
+              lineHeight: 1.7,
             }}
           >
             {article.subtitle}
@@ -183,7 +194,7 @@ export function ArticleDetail() {
         )}
 
         {/* Author Info */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="mb-8 flex items-center gap-3">
           <Avatar className="w-10 h-10 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
             <AvatarImage src={authorAvatar || undefined} alt={authorName} crossOrigin="anonymous" />
             <AvatarFallback
@@ -215,7 +226,7 @@ export function ArticleDetail() {
             <p
               className="text-xs"
               style={{
-                color: "#889994",
+                color: "rgba(227, 226, 227, 0.56)",
                 fontFamily: "JetBrains Mono, monospace",
               }}
             >
@@ -224,21 +235,13 @@ export function ArticleDetail() {
           </div>
         </div>
 
-        {/* Separator */}
-        <div
-          className="h-[1px] w-full mb-8"
-          style={{
-            background: "rgba(62, 207, 178, 0.15)",
-          }}
-        />
-
         {/* Hero Thumbnail */}
         {thumbnailUrl && (
-          <div className="mb-10">
+          <div className="mb-12 overflow-hidden rounded-xl border" style={{ borderColor: "rgba(227, 226, 227, 0.14)" }}>
             <ImageWithFallback
               src={thumbnailUrl}
               alt={article.title}
-              className="w-full h-auto rounded-xl object-cover"
+              className="h-auto w-full object-cover"
               style={{
                 aspectRatio: "16/9",
               }}
@@ -248,12 +251,12 @@ export function ArticleDetail() {
 
         {/* Article Content */}
         <div
-          className="prose-custom mb-12"
+          className="prose-custom mb-14"
           style={{
             fontFamily: "Lora, serif",
             fontSize: "19px",
             lineHeight: 1.8,
-            color: "#d0d6d4",
+            color: "rgba(227, 226, 227, 0.86)",
           }}
         >
           <ReactMarkdown
@@ -268,10 +271,10 @@ export function ArticleDetail() {
                     fontSize: "32px",
                     fontWeight: 700,
                     color: "#e3e2e3",
-                    marginTop: "48px",
-                    marginBottom: "24px",
-                    lineHeight: 1.3,
-                  }}
+                     marginTop: "52px",
+                     marginBottom: "24px",
+                     lineHeight: 1.3,
+                   }}
                 />
               ),
               h2: ({ node, ...props }) => (
@@ -282,10 +285,10 @@ export function ArticleDetail() {
                     fontSize: "28px",
                     fontWeight: 700,
                     color: "#e3e2e3",
-                    marginTop: "40px",
-                    marginBottom: "20px",
-                    lineHeight: 1.3,
-                  }}
+                     marginTop: "44px",
+                     marginBottom: "20px",
+                     lineHeight: 1.3,
+                   }}
                 />
               ),
               h3: ({ node, ...props }) => (
@@ -296,15 +299,15 @@ export function ArticleDetail() {
                     fontSize: "22px",
                     fontWeight: 600,
                     color: "#e3e2e3",
-                    marginTop: "32px",
-                    marginBottom: "16px",
-                    lineHeight: 1.4,
-                  }}
+                     marginTop: "36px",
+                     marginBottom: "16px",
+                     lineHeight: 1.4,
+                   }}
                 />
               ),
               p: ({ node, ...props }) => (
-                <p {...props} className="mb-6" />
-              ),
+                  <p {...props} className="mb-7" />
+                ),
               blockquote: ({ node, ...props }) => (
                 <blockquote
                   {...props}
@@ -313,10 +316,10 @@ export function ArticleDetail() {
                     paddingLeft: "16px",
                     fontStyle: "italic",
                     color: "#a8b5b0",
-                    margin: "32px 0",
-                  }}
-                />
-              ),
+                     margin: "36px 0",
+                   }}
+                 />
+               ),
               code: ({ node, inline, ...props }: { node?: any; inline?: boolean; className?: string; children?: any }) => {
                 if (inline) {
                   return (
@@ -336,10 +339,10 @@ export function ArticleDetail() {
                 return <code {...props} />;
               },
               pre: ({ node, ...props }) => (
-                <pre
-                  {...props}
-                  className="my-6 rounded-lg overflow-x-auto"
-                  style={{
+                 <pre
+                   {...props}
+                   className="my-6 rounded-lg overflow-x-auto"
+                   style={{
                     background: "#1e1e2e",
                     padding: "20px",
                   }}
@@ -396,12 +399,7 @@ export function ArticleDetail() {
         </div>
 
         {/* Like and Share Section */}
-        <div
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 border-t"
-          style={{
-            borderColor: "rgba(62, 207, 178, 0.15)",
-          }}
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-y py-8" style={{ borderColor: "rgba(227, 226, 227, 0.14)" }}>
           <div className="lg:hidden">
             <LikeButton articleId={article.id} initialLikes={article.likes} />
           </div>
@@ -412,8 +410,8 @@ export function ArticleDetail() {
         <div
           className="flex items-start gap-4 p-6 rounded-xl my-8"
           style={{
-            background: "rgba(62, 207, 178, 0.05)",
-            border: "1px solid rgba(62, 207, 178, 0.15)",
+            background: "rgba(227, 226, 227, 0.03)",
+            border: "1px solid rgba(227, 226, 227, 0.14)",
           }}
         >
           <Avatar className="w-14 h-14 border flex-shrink-0" style={{ borderColor: "rgba(62, 207, 178, 0.3)" }}>
@@ -431,43 +429,22 @@ export function ArticleDetail() {
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "#889994", fontFamily: "JetBrains Mono, monospace" }}>
-              Ditulis oleh
-            </p>
+             <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "rgba(227, 226, 227, 0.56)", fontFamily: "JetBrains Mono, monospace" }}>
+               Ditulis oleh
+             </p>
             <p className="font-semibold text-lg" style={{ color: "#e3e2e3", fontFamily: "Space Grotesk, sans-serif" }}>
               {authorName}
             </p>
-            <p className="text-sm mt-1" style={{ color: "#889994" }}>
-              Laboratorium TKITI — Departemen Sistem Informasi, Universitas Andalas
-            </p>
-          </div>
-        </div>
+             <p className="text-sm mt-1" style={{ color: "rgba(227, 226, 227, 0.7)" }}>
+               Laboratorium TKITI — Departemen Sistem Informasi, Universitas Andalas
+             </p>
+           </div>
+         </div>
       </div>
 
       {/* More Articles Section */}
       <MoreArticles currentSlug={article.slug} />
 
-      {/* Minimal Article Footer */}
-      <footer
-        className="border-t mt-16"
-        style={{ borderColor: "rgba(62, 207, 178, 0.1)" }}
-      >
-        <div className="max-w-[680px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link
-            to="/"
-            className="font-bold tracking-[0.3em] hover:opacity-80 transition-opacity"
-            style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "20px", color: "#3ECFB2" }}
-          >
-            TKITI
-          </Link>
-          <p
-            className="text-center sm:text-right"
-            style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "11px", color: "rgba(227, 226, 227, 0.35)" }}
-          >
-            Laboratorium Tata Kelola & Infrastruktur TI
-          </p>
-        </div>
-      </footer>
     </article>
     </>
   );
@@ -483,8 +460,8 @@ function MoreArticles({ currentSlug }: { currentSlug: string }) {
         if (res.success && res.data) {
           setArticles(res.data.filter((a) => a.slug !== currentSlug).slice(0, 3));
         }
-      } catch {
-        // silent
+      } catch (error) {
+        console.error("Failed to fetch related articles:", error);
       }
     }
     fetch();

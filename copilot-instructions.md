@@ -107,7 +107,7 @@ Satu monorepo, dua folder terpisah:
 tkiti/                                      ← root monorepo
 │
 ├── frontend/                               ← React + Vite
-│   ├── CLAUDE.md                           ← file ini (taruh di root monorepo)
+│   ├── copilot-instructions.md                           ← file ini (taruh di root monorepo)
 │   ├── index.html
 │   ├── vite.config.ts
 │   ├── tailwind.config.ts

@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useContent } from "../hooks/useContent";
+import { BackgroundPaths } from "@/app/components/ui/background-paths";
 
 const heroEase = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -19,20 +19,7 @@ export function Hero() {
 
   return (
     <section className="relative flex flex-col items-center justify-center px-6 text-center overflow-hidden min-h-[70vh] py-12">
-      {/* Background Image */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        initial={{ scale: 1.08, opacity: 0 }}
-        whileInView={{ scale: 1, opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.2, ease: heroEase }}
-      >
-        <ImageWithFallback
-          src="https://images.unsplash.com/photo-1734702496699-9cdda4d1dd01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmdXR1cmlzdGljJTIwZ2xhc3MlMjBzZXJ2ZXIlMjByYWNrJTIwZ2xvd2luZ3xlbnwxfHx8fDE3NzQ5NTM0NjF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-          alt="Server Rack"
-          className="w-full h-full object-cover opacity-20 grayscale"
-        />
-      </motion.div>
+      <BackgroundPaths />
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto">
@@ -132,6 +119,7 @@ export function Hero() {
           </motion.button>
         </motion.div>
       </div>
+      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#070809] to-transparent" />
     </section>
   );
 }

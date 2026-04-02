@@ -43,10 +43,12 @@ export function Home() {
     <>
       <SEO />
       <main className="relative pt-20">
-        <Hero />
-        <TechMarquee />
-        <Stats />
-        <Activities />
+        <div id="beranda" className="scroll-mt-20">
+          <Hero />
+          <TechMarquee />
+          <Stats />
+          <Activities />
+        </div>
         <History />
         <Structure />
         <Gallery />

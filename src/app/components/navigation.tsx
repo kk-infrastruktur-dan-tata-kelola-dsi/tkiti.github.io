@@ -5,10 +5,11 @@ export function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
-  const [activeSection, setActiveSection] = useState<string>("");
+  const [activeSection, setActiveSection] = useState<string>("beranda");
 
   const navItems = useMemo(
     () => [
+      { label: "Beranda", id: "beranda" },
       { label: "Sejarah", id: "sejarah" },
       { label: "Kegiatan", id: "kegiatan" },
       { label: "Struktur", id: "struktur" },
@@ -20,7 +21,7 @@ export function Navigation() {
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
-    
+
     // If we're already on the home page, just scroll to the section
     if (location.pathname === '/') {
       const element = document.getElementById(sectionId);
@@ -34,8 +35,8 @@ export function Navigation() {
       }
     } else {
       // If we're on a different page, navigate to home first, then scroll
-      setActiveSection(sectionId);
       navigate(`/${sectionId}`);
+      // Don't set activeSection here - let the useEffect handle it after navigation
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -51,6 +52,7 @@ export function Navigation() {
 
   useEffect(() => {
     const pathSectionMap: Record<string, string> = {
+      "/": "beranda",
       "/sejarah": "sejarah",
       "/kegiatan": "kegiatan",
       "/struktur": "struktur",
@@ -58,21 +60,27 @@ export function Navigation() {
       "/kontak": "kontak",
     };
     const sectionFromPath = pathSectionMap[location.pathname];
+
+    // If we're on a section page, set that section as active
     if (sectionFromPath) {
       setActiveSection(sectionFromPath);
-    } else if (location.pathname !== "/") {
-      // Clear stale section highlight on non-home pages (e.g. /article)
-      setActiveSection("");
+      return;
     }
 
-    if (location.pathname !== "/") return;
+    // Clear active section on non-home, non-section pages (e.g. /article, /article/:slug)
+    if (location.pathname !== "/") {
+      setActiveSection("");
+      return;
+    }
+
+    // Only on home page: listen to scroll to determine active section
     const sections = navItems
       .map((item) => document.getElementById(item.id))
       .filter(Boolean) as HTMLElement[];
 
     const onScroll = () => {
       const marker = window.scrollY + 120;
-      let current = "";
+      let current = "beranda"; // Default to beranda when at top
       for (const section of sections) {
         if (marker >= section.offsetTop) current = section.id;
       }
@@ -95,16 +103,44 @@ export function Navigation() {
       }}
     >
       <div className="flex justify-between items-center px-8 h-20 max-w-full mx-auto">
-        <Link to="/">
+        <a
+          href="#beranda"
+          onClick={(e) => {
+            e.preventDefault();
+            if (location.pathname !== '/') {
+              navigate('/');
+              setTimeout(() => {
+                const element = document.getElementById('beranda');
+                if (element) {
+                  const offsetTop = element.offsetTop - 80;
+                  window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                  });
+                }
+              }, 100);
+            } else {
+              const element = document.getElementById('beranda');
+              if (element) {
+                const offsetTop = element.offsetTop - 80;
+                window.scrollTo({
+                  top: offsetTop,
+                  behavior: 'smooth'
+                });
+              }
+            }
+          }}
+          style={{ cursor: 'pointer' }}
+        >
           <img
             src={logoSrc}
             alt="TKITI Logo"
             className="h-10 w-auto"
           />
-        </Link>
+        </a>
 
         <div className="hidden md:flex items-center gap-12">
-          {navItems.slice(0, 4).map((item) => (
+          {navItems.slice(1).map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
@@ -119,13 +155,13 @@ export function Navigation() {
               {item.label}
             </a>
           ))}
-          <Link 
-            to="/article" 
+          <Link
+            to="/article"
             className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
             style={{
               fontFamily: 'JetBrains Mono, monospace',
               fontSize: '14px',
-              color: location.pathname.startsWith('/article') ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+              color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
             }}
           >
             Article

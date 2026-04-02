@@ -33,6 +33,46 @@ function applyColor(svgString: string, color: string): string {
   );
 }
 
+const TechItem = ({ tech }: { tech: typeof technologies[0] }) => (
+  <div
+    className="marquee-item flex items-center gap-3 px-4 py-2 flex-shrink-0 transition-all duration-300 cursor-pointer"
+    style={{
+      background: "rgba(13, 14, 15, 0.6)",
+      backdropFilter: "blur(20px)",
+      border: "1px solid rgba(62, 207, 178, 0.15)",
+      borderRadius: "8px",
+    }}
+    title={tech.name}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-5px)";
+      e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.35)";
+      e.currentTarget.style.background = "rgba(97, 236, 205, 0.05)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.15)";
+      e.currentTarget.style.background = "rgba(13, 14, 15, 0.6)";
+    }}
+  >
+    <div
+      className="flex items-center justify-center"
+      style={{ width: "28px", height: "28px" }}
+      dangerouslySetInnerHTML={{
+        __html: applyColor(tech.svg, tech.color),
+      }}
+    />
+    <span
+      className="text-xs font-medium whitespace-nowrap"
+      style={{
+        fontFamily: "JetBrains Mono, monospace",
+        color: "#e3e2e3",
+      }}
+    >
+      {tech.name}
+    </span>
+  </div>
+);
+
 export function TechMarquee() {
   return (
     <section
@@ -50,88 +90,17 @@ export function TechMarquee() {
         }}
       >
         <div className="marquee-track flex items-center">
-          {/* First Set */}
+          {/* Set 1 */}
           {technologies.map((tech, i) => (
-            <div
-              key={i}
-              className="marquee-item flex items-center gap-3 px-4 py-2 flex-shrink-0 transition-all duration-300 cursor-pointer"
-              style={{
-                background: "rgba(13, 14, 15, 0.6)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(62, 207, 178, 0.15)",
-                borderRadius: "8px",
-              }}
-              title={tech.name}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.35)";
-                e.currentTarget.style.background = "rgba(97, 236, 205, 0.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.15)";
-                e.currentTarget.style.background = "rgba(13, 14, 15, 0.6)";
-              }}
-            >
-              <div
-                className="flex items-center justify-center"
-                style={{ width: "28px", height: "28px" }}
-                dangerouslySetInnerHTML={{
-                  __html: applyColor(tech.svg, tech.color),
-                }}
-              />
-              <span
-                className="text-xs font-medium whitespace-nowrap"
-                style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  color: "#e3e2e3",
-                }}
-              >
-                {tech.name}
-              </span>
-            </div>
+            <TechItem key={i} tech={tech} />
           ))}
-
-          {/* Duplicate for seamless loop */}
+          {/* Set 2 (duplicate for seamless loop) */}
           {technologies.map((tech, i) => (
-            <div
-              key={`dup-${i}`}
-              className="marquee-item flex items-center gap-3 px-4 py-2 flex-shrink-0 transition-all duration-300 cursor-pointer"
-              style={{
-                background: "rgba(13, 14, 15, 0.6)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(62, 207, 178, 0.15)",
-                borderRadius: "8px",
-              }}
-              title={tech.name}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.35)";
-                e.currentTarget.style.background = "rgba(97, 236, 205, 0.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.15)";
-                e.currentTarget.style.background = "rgba(13, 14, 15, 0.6)";
-              }}
-            >
-              <div
-                className="flex items-center justify-center"
-                style={{ width: "28px", height: "28px" }}
-                dangerouslySetInnerHTML={{
-                  __html: applyColor(tech.svg, tech.color),
-                }}
-              />
-              <span
-                className="text-xs font-medium whitespace-nowrap"
-                style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  color: "#e3e2e3",
-                }}
-              >
-                {tech.name}
-              </span>
-            </div>
+            <TechItem key={`dup1-${i}`} tech={tech} />
+          ))}
+          {/* Set 3 (extra buffer to prevent gaps) */}
+          {technologies.map((tech, i) => (
+            <TechItem key={`dup2-${i}`} tech={tech} />
           ))}
         </div>
       </div>
@@ -144,7 +113,8 @@ export function TechMarquee() {
           .marquee-track {
             display: flex;
             width: max-content;
-            animation: marquee 30s linear infinite;
+            animation: marquee 40s linear infinite;
+            will-change: transform;
           }
           .marquee-item {
             margin: 0 8px;
@@ -154,7 +124,7 @@ export function TechMarquee() {
               transform: translateX(0);
             }
             100% {
-              transform: translateX(-50%);
+              transform: translateX(calc(-100% / 3));
             }
           }
         `}
