@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 export function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
+  const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -46,7 +47,7 @@ export function Navigation() {
       <div className="flex justify-between items-center px-8 h-20 max-w-full mx-auto">
         <Link to="/">
           <img
-            src="/images/logo.png"
+            src={logoSrc}
             alt="TKITI Logo"
             className="h-10 w-auto"
           />
