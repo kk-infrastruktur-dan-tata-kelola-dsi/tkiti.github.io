@@ -18,6 +18,14 @@ const username = process.env.SEED_USERNAME ?? 'admin'
 const password = process.env.SEED_PASSWORD ?? 'admin123'
 const overwrite = process.env.SEED_OVERWRITE === 'true'
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    username text NOT NULL UNIQUE,
+    password_hash text NOT NULL
+  )
+`)
+
 const passwordHash = await bcrypt.hash(password, 12)
 
 const existingUser = db.select().from(users).where(eq(users.username, username)).get()
