@@ -137,6 +137,56 @@ function sortRowsByMaster(rows: StrukturRow[]) {
   })
 }
 
+function getExpectedParentId(rows: StrukturRow[], row: StrukturRow) {
+  const master = getMasterByRole(row.role)
+  if (!master?.parentRole) return null
+  const parentRole = master.parentRole
+  const candidates = rows
+    .filter((item) => normalizeRole(item.role) === normalizeRole(parentRole))
+    .sort((a, b) => a.id - b.id)
+  return candidates[0]?.id ?? null
+}
+
+function syncHierarchyForPeriode(periodeId: number) {
+  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periodeId)).all() as StrukturRow[]
+  if (rows.length === 0) return rows
+
+  const rowMap = new Map<number, StrukturRow>()
+  rows.forEach((row) => rowMap.set(row.id, row))
+
+  for (const row of rows) {
+    const master = getMasterByRole(row.role)
+    if (!master) continue
+    const expectedParentId = getExpectedParentId(rows, row)
+    const needsUpdate =
+      row.parentId !== expectedParentId ||
+      row.urutan !== master.urutan ||
+      row.divisi !== master.divisi
+
+    if (needsUpdate) {
+      db
+        .update(anggota)
+        .set({
+          parentId: expectedParentId,
+          urutan: master.urutan,
+          divisi: master.divisi,
+        })
+        .where(eq(anggota.id, row.id))
+        .run()
+
+      const updated: StrukturRow = {
+        ...row,
+        parentId: expectedParentId,
+        urutan: master.urutan,
+        divisi: master.divisi,
+      }
+      rowMap.set(row.id, updated)
+    }
+  }
+
+  return sortRowsByMaster(Array.from(rowMap.values()))
+}
+
 function buildTree(rows: StrukturRow[]): StrukturTreeNode[] {
   const master = getMasterRows()
   const orderMap = new Map(master.map((row) => [normalizeRole(row.role), row.urutan]))
@@ -306,10 +356,10 @@ strukturRoutes.get('/template', (c) => c.json({ success: true, data: getMasterRo
 strukturRoutes.get('/', (c) => {
   const periode = getPeriodeOrDefault(parsePeriodeId(c.req.query('periodeId')))
   if (!periode) return c.json({ success: true, data: [], tree: [], meta: { periodeId: null } })
-  const rows = db.select().from(anggota).where(eq(anggota.periodeId, periode.id)).orderBy(asc(anggota.parentId), asc(anggota.urutan), asc(anggota.id)).all() as StrukturRow[]
+  const rows = syncHierarchyForPeriode(periode.id)
   return c.json({
     success: true,
-    data: sortRowsByMaster(rows),
+    data: rows,
     tree: buildTree(rows),
     meta: { periodeId: periode.id, activePeriodeId: getActivePeriode()?.id ?? null },
   })
@@ -346,6 +396,7 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
     .values({ nama, role: master.role, divisi: master.divisi, photo, urutan: master.urutan, parentId, periodeId: periode.id })
     .returning()
     .get()
+  syncHierarchyForPeriode(periode.id)
   return c.json({ success: true, data: inserted }, 201)
 })
 
@@ -384,6 +435,7 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
     .where(eq(anggota.id, id))
     .returning()
     .get()
+  syncHierarchyForPeriode(periodeId)
   return c.json({ success: true, data: updated })
 })
 
@@ -408,6 +460,7 @@ strukturRoutes.delete('/:id', authMiddleware, async (c) => {
   if (hasChild) return c.json({ success: false, error: 'Tidak bisa hapus node yang masih punya anak' }, 400)
   db.delete(anggota).where(eq(anggota.id, id)).run()
   if (existing.photo) await deleteFile(existing.photo)
+  syncHierarchyForPeriode(periodeId)
   return c.json({ success: true, message: 'Anggota berhasil dihapus' })
 })
 
