@@ -38,8 +38,14 @@ jobs:
 
       - name: Fix permissions
         run: |
-          chmod -R 755 /www/wwwroot/tkiti-web-profile/backend
-          chown -R tkiti:tkiti /www/wwwroot/tkiti-web-profile/backend 2>/dev/null || true
+          find /www/wwwroot/tkiti-web-profile/backend \
+            -path /www/wwwroot/tkiti-web-profile/backend/data -prune -o \
+            -path /www/wwwroot/tkiti-web-profile/backend/uploads -prune -o \
+            -type d -exec chmod 755 {} +
+          find /www/wwwroot/tkiti-web-profile/backend \
+            -path /www/wwwroot/tkiti-web-profile/backend/data -prune -o \
+            -path /www/wwwroot/tkiti-web-profile/backend/uploads -prune -o \
+            -type f -exec chmod 644 {} +
 
       - name: Validate backend env file
         working-directory: /www/wwwroot/tkiti-web-profile/backend
