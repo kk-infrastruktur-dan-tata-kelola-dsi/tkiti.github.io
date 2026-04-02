@@ -178,7 +178,7 @@ export function AdminLayout() {
         <SidebarProvider defaultOpen={true}>
           <AdminSidebar onLogout={handleLogout} />
 
-          <SidebarInset className="flex flex-col min-h-screen bg-gray-50">
+          <SidebarInset className="flex flex-col min-h-screen bg-gray-50 text-gray-900">
             <AdminHeader
               username={username}
             />

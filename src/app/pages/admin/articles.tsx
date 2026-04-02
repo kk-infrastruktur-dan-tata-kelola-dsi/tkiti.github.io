@@ -92,8 +92,8 @@ export function AdminArticles() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Artikel</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <h1 className="text-xl font-semibold text-gray-900">Artikel</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
             {articles.length} artikel total
           </p>
         </div>
@@ -113,11 +113,11 @@ export function AdminArticles() {
             placeholder="Cari judul atau author..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+            className="pl-8 bg-white border-gray-200"
           />
         </div>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="bg-gray-100 dark:bg-zinc-800">
+          <TabsList className="bg-gray-100">
             <TabsTrigger value="all">Semua</TabsTrigger>
             <TabsTrigger value="published">Published</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>
@@ -126,17 +126,17 @@ export function AdminArticles() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-gray-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950">
+      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
-              <TableHead className="text-gray-600 dark:text-gray-400">Judul</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 hidden sm:table-cell">Author</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 hidden md:table-cell">Tanggal</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 hidden lg:table-cell w-16 text-right">Likes</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 w-28">Status</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 w-32 text-right">Aksi</TableHead>
-            </TableRow>
+              <TableRow className="border-gray-200 bg-gray-50">
+                <TableHead className="text-gray-600">Judul</TableHead>
+                <TableHead className="text-gray-600 hidden sm:table-cell">Author</TableHead>
+                <TableHead className="text-gray-600 hidden md:table-cell">Tanggal</TableHead>
+                <TableHead className="text-gray-600 hidden lg:table-cell w-16 text-right">Likes</TableHead>
+                <TableHead className="text-gray-600 w-28">Status</TableHead>
+                <TableHead className="text-gray-600 w-32 text-right">Aksi</TableHead>
+              </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
@@ -153,31 +153,28 @@ export function AdminArticles() {
               </TableRow>
             ) : (
               filtered.map((article) => (
-                <TableRow
-                  key={article.id}
-                  className="border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900"
-                >
+                <TableRow key={article.id} className="border-gray-200 hover:bg-gray-50">
                   <TableCell>
-                    <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
+                    <p className="font-medium text-gray-900 line-clamp-1">
                       {article.title}
                     </p>
                     <p className="text-xs text-gray-400 font-mono mt-0.5">{article.slug}</p>
                   </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400 text-sm hidden sm:table-cell">
+                  <TableCell className="text-gray-600 text-sm hidden sm:table-cell">
                     {article.author ?? '—'}
                   </TableCell>
-                  <TableCell className="text-gray-500 dark:text-gray-400 text-sm hidden md:table-cell">
+                  <TableCell className="text-gray-500 text-sm hidden md:table-cell">
                     {formatDate(article.createdAt)}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-right">
-                    <span className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
+                    <span className="flex items-center justify-end gap-1 text-sm text-gray-500">
                       <Heart className="h-3.5 w-3.5" />
                       {article.likes}
                     </span>
                   </TableCell>
                   <TableCell>
                     {article.published ? (
-                      <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0 text-xs">
+                      <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
                         Published
                       </Badge>
                     ) : (
@@ -192,7 +189,7 @@ export function AdminArticles() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        className="h-8 w-8 text-gray-400 hover:text-gray-700"
                         title={article.published ? 'Unpublish' : 'Publish'}
                         onClick={() => handleTogglePublish(article)}
                       >
@@ -205,7 +202,7 @@ export function AdminArticles() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        className="h-8 w-8 text-gray-400 hover:text-gray-700"
                         title="Edit"
                         asChild
                       >
@@ -220,7 +217,7 @@ export function AdminArticles() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                            className="h-8 w-8 text-gray-400 hover:text-red-600"
                             title="Hapus"
                           >
                             <Trash2 className="h-4 w-4" />

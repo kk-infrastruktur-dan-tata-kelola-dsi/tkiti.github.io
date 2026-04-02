@@ -23,9 +23,7 @@ import {
   TableHeader, TableRow,
 } from '@/app/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { apiRequest } from '@/app/lib/api'
-
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
+import { apiRequest, API_URL } from '@/app/lib/api'
 
 type Anggota = {
   id: number; nama: string; role: string
@@ -39,9 +37,9 @@ type FormState = {
 const EMPTY_FORM: FormState = { nama: '', role: '', divisi: 'anggota', urutan: '' }
 
 const DIVISI_MAP: Record<string, { label: string; color: string }> = {
-  kepemimpinan: { label: 'Kepemimpinan', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' },
-  anggota: { label: 'Anggota', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400' },
-  kolaborasi: { label: 'Kolaborasi', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400' },
+  kepemimpinan: { label: 'Kepemimpinan', color: 'bg-amber-100 text-amber-700' },
+  anggota: { label: 'Anggota', color: 'bg-blue-100 text-blue-700' },
+  kolaborasi: { label: 'Kolaborasi', color: 'bg-violet-100 text-violet-700' },
 }
 
 export function AdminStruktur() {
@@ -83,7 +81,7 @@ export function AdminStruktur() {
       urutan: a.urutan?.toString() ?? '',
     })
     setPhotoFile(null)
-    setPhotoPreview(a.photo ? `${API_URL}/${a.photo}` : '')
+    setPhotoPreview(a.photo ? (a.photo.startsWith('http') ? a.photo : `${API_URL}/${a.photo.replace(/^\//, '')}`) : '')
     setDialogOpen(true)
   }
 
@@ -139,8 +137,8 @@ export function AdminStruktur() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Struktur Organisasi</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{items.length} anggota</p>
+          <h1 className="text-xl font-semibold text-gray-900">Struktur Organisasi</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{items.length} anggota</p>
         </div>
         <Button className="gap-2" onClick={openNew}>
           <Plus className="h-4 w-4" /> Tambah Anggota
@@ -149,7 +147,7 @@ export function AdminStruktur() {
 
       {/* Filter */}
       <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList className="bg-gray-100 dark:bg-zinc-800">
+        <TabsList className="bg-gray-100">
           <TabsTrigger value="all">Semua</TabsTrigger>
           <TabsTrigger value="kepemimpinan">Kepemimpinan</TabsTrigger>
           <TabsTrigger value="anggota">Anggota</TabsTrigger>
@@ -158,15 +156,15 @@ export function AdminStruktur() {
       </Tabs>
 
       {/* Table */}
-      <div className="rounded-lg border border-gray-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950">
+      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
-              <TableHead className="text-gray-600 dark:text-gray-400 w-12"></TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400">Nama</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 hidden sm:table-cell">Role</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 w-32">Divisi</TableHead>
-              <TableHead className="text-gray-600 dark:text-gray-400 w-20 text-right">Aksi</TableHead>
+            <TableRow className="border-gray-200 bg-gray-50">
+              <TableHead className="text-gray-600 w-12"></TableHead>
+              <TableHead className="text-gray-600">Nama</TableHead>
+              <TableHead className="text-gray-600 hidden sm:table-cell">Role</TableHead>
+              <TableHead className="text-gray-600 w-32">Divisi</TableHead>
+              <TableHead className="text-gray-600 w-20 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -175,20 +173,20 @@ export function AdminStruktur() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center py-12 text-gray-400">Belum ada anggota</TableCell></TableRow>
             ) : filtered.map((a) => (
-              <TableRow key={a.id} className="border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900">
+              <TableRow key={a.id} className="border-gray-200 hover:bg-gray-50">
                 <TableCell>
                   {a.photo ? (
-                    <img src={`${API_URL}/${a.photo}`} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    <img src={a.photo.startsWith('http') ? a.photo : `${API_URL}/${a.photo.replace(/^\//, '')}`} alt="" className="w-9 h-9 rounded-full object-cover" />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                      <User className="h-4 w-4 text-gray-400 dark:text-zinc-500" />
+                    <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="h-4 w-4 text-gray-400" />
                     </div>
                   )}
                 </TableCell>
                 <TableCell>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{a.nama}</p>
+                  <p className="font-medium text-gray-900">{a.nama}</p>
                 </TableCell>
-                <TableCell className="text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{a.role}</TableCell>
+                <TableCell className="text-sm text-gray-500 hidden sm:table-cell">{a.role}</TableCell>
                 <TableCell>
                   {a.divisi && DIVISI_MAP[a.divisi] ? (
                     <Badge className={`${DIVISI_MAP[a.divisi].color} border-0 text-xs`}>
@@ -200,12 +198,12 @@ export function AdminStruktur() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" onClick={() => openEdit(a)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-700" onClick={() => openEdit(a)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -242,33 +240,33 @@ export function AdminStruktur() {
             {/* Photo */}
             <div className="flex items-center gap-4">
               {photoPreview ? (
-                <img src={photoPreview} alt="" className="w-16 h-16 rounded-full object-cover border border-gray-200 dark:border-zinc-700" />
+                <img src={photoPreview} alt="" className="w-16 h-16 rounded-full object-cover border border-gray-200" />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
                   <User className="h-6 w-6 text-gray-400" />
                 </div>
               )}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-              <Button variant="outline" size="sm" className="gap-2 dark:border-zinc-700" onClick={() => fileRef.current?.click()}>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileRef.current?.click()}>
                 <Upload className="h-3.5 w-3.5" /> Upload foto
               </Button>
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm">Nama <span className="text-red-500">*</span></Label>
-              <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700" />
+              <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="bg-white border-gray-200" />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm">Role <span className="text-red-500">*</span></Label>
-              <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Kepala Lab / Anggota / ..." className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700" />
+              <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Kepala Lab / Anggota / ..." className="bg-white border-gray-200" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Divisi</Label>
                 <Select value={form.divisi} onValueChange={(v) => setForm({ ...form, divisi: v })}>
-                  <SelectTrigger className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700">
+                  <SelectTrigger className="bg-white border-gray-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -280,13 +278,13 @@ export function AdminStruktur() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Urutan</Label>
-                <Input type="number" value={form.urutan} onChange={(e) => setForm({ ...form, urutan: e.target.value })} placeholder="0" className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700" />
+                <Input type="number" value={form.urutan} onChange={(e) => setForm({ ...form, urutan: e.target.value })} placeholder="0" className="bg-white border-gray-200" />
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="dark:border-zinc-700">Batal</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Menyimpan...' : (editId ? 'Simpan' : 'Tambah')}
             </Button>

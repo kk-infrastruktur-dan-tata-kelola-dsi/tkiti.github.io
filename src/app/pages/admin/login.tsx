@@ -1,14 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { Moon, Sun } from 'lucide-react'
 import { LoginForm } from '@/components/login-form'
-import { Button } from '@/app/components/ui/button'
-import { cn } from '@/app/components/ui/utils'
 import { getToken, isTokenExpired } from '@/app/lib/api'
 
 export function AdminLogin() {
   const navigate = useNavigate()
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('admin_dark') === 'true')
 
   // Sudah login → langsung ke dashboard
   useEffect(() => {
@@ -18,33 +14,11 @@ export function AdminLogin() {
     }
   }, [navigate])
 
-  function toggleDark() {
-    setIsDark((prev) => {
-      const next = !prev
-      localStorage.setItem('admin_dark', String(next))
-      return next
-    })
-  }
-
   return (
-    <div className={cn('min-h-svh', isDark && 'dark')}>
-      <div className='relative grid min-h-svh bg-white dark:bg-zinc-950 lg:grid-cols-2'>
-
-        {/* Dark mode toggle — pojok kanan atas */}
-        <div className='absolute top-4 right-4 z-10'>
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={toggleDark}
-            className='h-9 w-9 rounded-full text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
-            title={isDark ? 'Light mode' : 'Dark mode'}
-          >
-            {isDark ? <Sun className='h-4 w-4' /> : <Moon className='h-4 w-4' />}
-          </Button>
-        </div>
-
+    <div className='min-h-svh'>
+      <div className='relative grid min-h-svh bg-white lg:grid-cols-2'>
         {/* ── Kiri: Branding panel ────────────────────────────────────────── */}
-        <div className='relative hidden lg:flex flex-col bg-zinc-900 dark:bg-zinc-950 p-12 text-white overflow-hidden'>
+        <div className='relative hidden lg:flex flex-col bg-zinc-900 p-12 text-white overflow-hidden'>
           {/* Accent blob */}
           <div
             className='absolute top-0 right-0 w-[400px] h-[400px] rounded-full opacity-20 blur-[100px] pointer-events-none'
@@ -79,13 +53,13 @@ export function AdminLogin() {
         </div>
 
         {/* ── Kanan: Form ─────────────────────────────────────────────────── */}
-        <div className='flex flex-col items-center justify-center bg-white dark:bg-zinc-950 p-6 md:p-10'>
+        <div className='flex flex-col items-center justify-center bg-white p-6 md:p-10'>
           {/* Logo mobile (hanya tampil di bawah lg) */}
           <div className='mb-8 flex items-center gap-2 lg:hidden'>
-            <div className='w-8 h-8 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center'>
+            <div className='w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center'>
               <span className='text-[#3ECFB2] font-bold text-xs font-mono'>TK</span>
             </div>
-            <span className='font-semibold text-gray-900 dark:text-gray-100 text-sm'>TKITI Admin</span>
+            <span className='font-semibold text-gray-900 text-sm'>TKITI Admin</span>
           </div>
 
           <div className='w-full max-w-sm'>

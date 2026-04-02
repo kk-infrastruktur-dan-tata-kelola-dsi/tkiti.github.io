@@ -10,7 +10,7 @@ import { Switch } from '@/app/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/app/components/ui/tabs'
 import { Separator } from '@/app/components/ui/separator'
 import { cn } from '@/app/components/ui/utils'
-import { apiRequest } from '@/app/lib/api'
+import { apiRequest, API_URL } from '@/app/lib/api'
 
 type ArticleForm = {
   title: string
@@ -47,8 +47,8 @@ function renderMarkdown(md: string): string {
     .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-3">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
-    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-gray-300 dark:border-zinc-600 pl-4 italic text-gray-600 dark:text-gray-400 my-3">$1</blockquote>')
+    .replace(/`(.+?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-3">$1</blockquote>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .replace(/(<li.*<\/li>)/gs, '<ul class="my-3 space-y-1">$1</ul>')
     .replace(/\n\n/g, '</p><p class="mb-4 leading-relaxed">')
@@ -165,9 +165,9 @@ export function AdminArticleEditor() {
             <Link to="/admin/articles"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              {isNew ? 'Tulis Artikel Baru' : 'Edit Artikel'}
-            </h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {isNew ? 'Tulis Artikel Baru' : 'Edit Artikel'}
+              </h1>
             {!isNew && (
               <p className="text-xs text-gray-400 font-mono mt-0.5">/articles/{form.slug}</p>
             )}
@@ -182,7 +182,7 @@ export function AdminArticleEditor() {
               checked={form.published}
               onCheckedChange={(v) => setField('published', v)}
             />
-            <Label htmlFor="published" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+            <Label htmlFor="published" className="text-sm text-gray-600 cursor-pointer">
               {form.published ? 'Published' : 'Draft'}
             </Label>
           </div>
@@ -196,8 +196,8 @@ export function AdminArticleEditor() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Kiri: Metadata ─────────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 space-y-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Metadata
             </p>
 
@@ -208,7 +208,7 @@ export function AdminArticleEditor() {
                 value={form.title}
                 onChange={(e) => setField('title', e.target.value)}
                 placeholder="Judul artikel"
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+                className="bg-white border-gray-200"
               />
             </div>
 
@@ -233,7 +233,7 @@ export function AdminArticleEditor() {
                 value={form.slug}
                 onChange={(e) => { setSlugManual(true); setField('slug', e.target.value) }}
                 placeholder="slug-artikel"
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700 font-mono text-sm"
+                className="bg-white border-gray-200 font-mono text-sm"
               />
             </div>
 
@@ -244,7 +244,7 @@ export function AdminArticleEditor() {
                 value={form.author}
                 onChange={(e) => setField('author', e.target.value)}
                 placeholder="Nama penulis"
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+                className="bg-white border-gray-200"
               />
             </div>
 
@@ -256,24 +256,24 @@ export function AdminArticleEditor() {
                 onChange={(e) => setField('excerpt', e.target.value)}
                 placeholder="Ringkasan singkat artikel..."
                 rows={3}
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700 resize-none text-sm"
+                className="bg-white border-gray-200 resize-none text-sm"
               />
             </div>
           </div>
 
           {/* Thumbnail */}
-          <div className="rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 space-y-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Thumbnail
             </p>
 
             {/* Preview */}
             {thumbnailPreview && (
-              <div className="relative rounded-md overflow-hidden aspect-video bg-gray-100 dark:bg-zinc-800">
+              <div className="relative rounded-md overflow-hidden aspect-video bg-gray-100">
                 <img
                   src={thumbnailPreview.startsWith('blob:')
                     ? thumbnailPreview
-                    : `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/${form.thumbnail}`}
+                    : (form.thumbnail.startsWith('http') ? form.thumbnail : `${API_URL}/${form.thumbnail.replace(/^\//, '')}`)}
                   alt="Thumbnail preview"
                   className="w-full h-full object-cover"
                 />
@@ -299,7 +299,7 @@ export function AdminArticleEditor() {
               type="button"
               variant="outline"
               size="sm"
-              className="w-full gap-2 border-dashed dark:border-zinc-700"
+              className="w-full gap-2 border-dashed"
               onClick={() => fileRef.current?.click()}
             >
               <ImageIcon className="h-4 w-4" />
@@ -313,7 +313,7 @@ export function AdminArticleEditor() {
         <div className="lg:col-span-2">
           <Tabs defaultValue="write" className="h-full flex flex-col">
             <div className="flex items-center gap-2 mb-3">
-              <TabsList className="bg-gray-100 dark:bg-zinc-800">
+              <TabsList className="bg-gray-100">
                 <TabsTrigger value="write" className="gap-1.5 text-sm">
                   <Pencil className="h-3.5 w-3.5" /> Tulis
                 </TabsTrigger>
@@ -333,20 +333,20 @@ export function AdminArticleEditor() {
                 placeholder={`# Judul Artikel\n\nTulis konten dalam format Markdown...\n\n## Sub-judul\n\nParagraf pertama...`}
                 className={cn(
                   'h-[600px] resize-none font-mono text-sm leading-relaxed',
-                  'bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800',
-                  'focus-visible:ring-1 focus-visible:ring-zinc-300 dark:focus-visible:ring-zinc-700',
-                )}
+                   'bg-white border-gray-200',
+                   'focus-visible:ring-1 focus-visible:ring-zinc-300',
+                 )}
               />
             </TabsContent>
 
             <TabsContent value="preview" className="flex-1 m-0">
               <div
                 className={cn(
-                  'h-[600px] overflow-auto rounded-md border border-gray-200 dark:border-zinc-800',
-                  'bg-white dark:bg-zinc-950 p-5',
-                  'prose prose-sm max-w-none dark:prose-invert',
-                  'text-gray-800 dark:text-gray-200',
-                )}
+                   'h-[600px] overflow-auto rounded-md border border-gray-200',
+                   'bg-white p-5',
+                   'prose prose-sm max-w-none',
+                   'text-gray-800',
+                 )}
               >
                 {form.content.trim() ? (
                   <div
@@ -363,7 +363,7 @@ export function AdminArticleEditor() {
         </div>
       </div>
 
-      <Separator className="dark:border-zinc-800" />
+      <Separator />
 
       {/* Bottom save bar */}
       <div className="flex items-center justify-between pb-4">
@@ -371,7 +371,7 @@ export function AdminArticleEditor() {
           {isNew ? 'Artikel belum disimpan' : 'Terakhir diperbarui: lihat tabel artikel'}
         </p>
         <div className="flex items-center gap-3">
-          <Button variant="outline" asChild className="dark:border-zinc-700">
+          <Button variant="outline" asChild>
             <Link to="/admin/articles">Batal</Link>
           </Button>
           <Button onClick={handleSave} disabled={saving} className="min-w-24">

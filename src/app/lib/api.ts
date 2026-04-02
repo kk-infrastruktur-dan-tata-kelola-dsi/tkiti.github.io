@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000'
+export const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000').replace(/\/$/, '')
 
 type ApiResponse<T = unknown> = {
   success: boolean

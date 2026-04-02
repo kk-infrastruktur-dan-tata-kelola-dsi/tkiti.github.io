@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { apiRequest } from "../lib/api";
+import { apiRequest, API_URL } from "../lib/api";
 import { Dialog, DialogContent, DialogOverlay, DialogPortal } from "./ui/dialog";
 import { Skeleton } from "./ui/skeleton";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -10,8 +10,10 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const;
 type GalleryImage = {
   id: string;
   url: string;
+  src?: string;
   alt?: string | null;
   caption?: string | null;
+  tanggal?: string | null;
 };
 
 export function Gallery() {
@@ -24,7 +26,16 @@ export function Gallery() {
       try {
         const res = await apiRequest<{ success: boolean; data?: GalleryImage[] }>("/gallery");
         if (res.success && res.data) {
-          setImages(res.data);
+          const normalized = res.data.map((image) => {
+            const src = image.url ?? image.src ?? "";
+            const absoluteSrc = src.startsWith("http") ? src : `${API_URL}/${src.replace(/^\//, "")}`;
+            return {
+              ...image,
+              url: absoluteSrc,
+              alt: image.alt ?? image.caption ?? "Gallery image",
+            };
+          });
+          setImages(normalized);
         }
       } catch (e) {
         console.error("Failed to fetch gallery:", e);

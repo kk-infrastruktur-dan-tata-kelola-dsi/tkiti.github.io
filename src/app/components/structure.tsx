@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
+import { API_URL } from "../lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
@@ -25,7 +26,12 @@ export function Structure() {
         if (res.success && res.data) {
           const normalized = res.data.map((member) => {
             const name = member.name ?? member.nama ?? "Anggota";
-            const photo = member.photo_url ?? member.photo ?? null;
+            const rawPhoto = member.photo_url ?? member.photo ?? null;
+            const photo = rawPhoto
+              ? rawPhoto.startsWith("http")
+                ? rawPhoto
+                : `${API_URL}/${rawPhoto.replace(/^\//, "")}`
+              : null;
             return {
               ...member,
               name,

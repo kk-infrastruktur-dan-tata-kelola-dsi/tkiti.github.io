@@ -11,9 +11,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/app/components/ui/alert-dialog'
 import { cn } from '@/app/components/ui/utils'
-import { apiRequest } from '@/app/lib/api'
-
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
+import { apiRequest, API_URL } from '@/app/lib/api'
 
 type GalleryItem = {
   id: number; src: string; caption: string | null
@@ -90,14 +88,14 @@ export function AdminGallery() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Gallery</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        <h1 className="text-xl font-semibold text-gray-900">Gallery</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
           {items.length} foto dokumentasi
         </p>
       </div>
 
       {/* Upload area */}
-      <Card className="border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+      <Card className="border-gray-200 bg-white">
         <CardContent className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
@@ -106,7 +104,7 @@ export function AdminGallery() {
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Keterangan foto"
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+                className="bg-white border-gray-200"
               />
             </div>
             <div className="space-y-1.5">
@@ -115,7 +113,7 @@ export function AdminGallery() {
                 type="date"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+                className="bg-white border-gray-200"
               />
             </div>
             <div className="space-y-1.5">
@@ -125,7 +123,7 @@ export function AdminGallery() {
                 value={urutan}
                 onChange={(e) => setUrutan(e.target.value)}
                 placeholder="0"
-                className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-700"
+                className="bg-white border-gray-200"
               />
             </div>
           </div>
@@ -139,12 +137,12 @@ export function AdminGallery() {
             className={cn(
               'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
               dragOver
-                ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30'
-                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600',
-            )}
+                ? 'border-blue-400 bg-blue-50'
+                : 'border-gray-300 hover:border-gray-400',
+              )}
           >
             <Upload className="h-8 w-8 mx-auto mb-3 text-gray-400" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               {uploading ? 'Mengupload...' : 'Drag & drop foto atau klik untuk browse'}
             </p>
             <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP · maks 5MB</p>
@@ -165,7 +163,7 @@ export function AdminGallery() {
         <div className="text-center py-12 text-gray-400">Memuat gallery...</div>
       ) : items.length === 0 ? (
         <div className="text-center py-12">
-          <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-zinc-700" />
+          <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-400">Belum ada foto</p>
         </div>
       ) : (
@@ -173,10 +171,10 @@ export function AdminGallery() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="group relative rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 aspect-square"
+              className="group relative rounded-lg overflow-hidden border border-gray-200 bg-white aspect-square"
             >
               <img
-                src={`${API_URL}/${item.src}`}
+                src={item.src.startsWith('http') ? item.src : `${API_URL}/${item.src.replace(/^\//, '')}`}
                 alt={item.caption ?? ''}
                 className="w-full h-full object-cover"
               />

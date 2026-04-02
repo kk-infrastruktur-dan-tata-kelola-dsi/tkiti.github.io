@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import { apiRequest } from "../lib/api";
+import { API_URL } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -43,7 +44,12 @@ function ArticleCard({ article }: { article: Article }) {
   const readingTime = calculateReadingTime(article.content ?? "");
   const authorName = article.author_name ?? article.author ?? "Admin TKITI";
   const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
-  const thumbnailUrl = article.thumbnail_url ?? article.thumbnail ?? null;
+  const thumbnailRaw = article.thumbnail_url ?? article.thumbnail ?? null;
+  const thumbnailUrl = thumbnailRaw
+    ? thumbnailRaw.startsWith("http")
+      ? thumbnailRaw
+      : `${API_URL}/${thumbnailRaw.replace(/^\//, "")}`
+    : null;
   const category = article.category ?? "Artikel";
 
   return (
