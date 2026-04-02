@@ -15,16 +15,20 @@ import { SEO } from "../components/seo";
 import "highlight.js/styles/atom-one-dark.css";
 
 type Article = {
-  id: string;
+  id: string | number;
   slug: string;
   title: string;
   subtitle?: string | null;
+  excerpt?: string | null;
   content: string;
-  category: string;
+  category?: string | null;
   thumbnail_url?: string | null;
-  author_name: string;
+  thumbnail?: string | null;
+  author_name?: string;
+  author?: string | null;
   author_avatar?: string | null;
-  published_at: string;
+  published_at?: string;
+  createdAt?: string | null;
   likes: number;
 };
 
@@ -50,7 +54,7 @@ export function ArticleDetail() {
     async function fetchArticle() {
       try {
         const res = await apiRequest<{ success: boolean; data?: Article }>(
-          `/api/articles/${slug}`
+          `/articles/${slug}`
         );
         if (res.success && res.data) {
           setArticle(res.data);
@@ -107,18 +111,22 @@ export function ArticleDetail() {
     );
   }
 
-  const readingTime = calculateReadingTime(article.content);
+  const readingTime = calculateReadingTime(article.content ?? "");
+  const authorName = article.author_name ?? article.author ?? "Admin TKITI";
+  const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
+  const category = article.category ?? "Artikel";
+  const thumbnailUrl = article.thumbnail_url ?? article.thumbnail ?? null;
 
   return (
     <>
       <SEO
         title={article.title}
         description={article.subtitle || article.excerpt || ""}
-        image={article.thumbnail_url || undefined}
+        image={thumbnailUrl || undefined}
         url={`/article/${article.slug}`}
         type="article"
-        publishedTime={article.published_at}
-        author={article.author_name}
+        publishedTime={publishedAt}
+        author={authorName}
       />
       <article className="min-h-screen pt-24 px-6">
       <ReadingProgressBar />
@@ -138,7 +146,7 @@ export function ArticleDetail() {
             fontFamily: "JetBrains Mono, monospace",
           }}
         >
-          {article.category}
+          {category}
         </span>
 
         {/* Title */}
@@ -170,7 +178,7 @@ export function ArticleDetail() {
         {/* Author Info */}
         <div className="flex items-center gap-3 mb-6">
           <Avatar className="w-10 h-10 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-            <AvatarImage src={article.author_avatar || undefined} alt={article.author_name} />
+            <AvatarImage src={article.author_avatar || undefined} alt={authorName} />
             <AvatarFallback
               style={{
                 background: "rgba(62, 207, 178, 0.1)",
@@ -180,7 +188,7 @@ export function ArticleDetail() {
                 fontWeight: 600,
               }}
             >
-              {article.author_name
+              {authorName
                 .split(" ")
                 .map((n) => n[0])
                 .slice(0, 2)
@@ -195,7 +203,7 @@ export function ArticleDetail() {
                 color: "#e3e2e3",
               }}
             >
-              {article.author_name}
+              {authorName}
             </p>
             <p
               className="text-xs"
@@ -204,7 +212,7 @@ export function ArticleDetail() {
                 fontFamily: "JetBrains Mono, monospace",
               }}
             >
-              {formatDate(article.published_at)} · {readingTime} min baca
+              {formatDate(publishedAt)} · {readingTime} min baca
             </p>
           </div>
         </div>
@@ -218,10 +226,10 @@ export function ArticleDetail() {
         />
 
         {/* Hero Thumbnail */}
-        {article.thumbnail_url && (
+        {thumbnailUrl && (
           <div className="mb-10">
             <ImageWithFallback
-              src={article.thumbnail_url}
+              src={thumbnailUrl}
               alt={article.title}
               className="w-full h-auto rounded-xl object-cover"
               style={{

@@ -5,7 +5,7 @@ import { apiRequest } from "../lib/api";
 import { toast } from "sonner";
 
 interface LikeButtonProps {
-  articleId: string;
+  articleId: string | number;
   initialLikes: number;
 }
 
@@ -27,7 +27,7 @@ export function LikeButton({ articleId, initialLikes }: LikeButtonProps) {
 
     try {
       const res = await apiRequest<{ success: boolean; likes?: number }>(
-        `/api/articles/${articleId}/like`,
+        `/articles/${articleId}/like`,
         { method: "POST" }
       );
 

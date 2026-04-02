@@ -9,17 +9,20 @@ import { Heart } from "lucide-react";
 import { SEO } from "../components/seo";
 
 type Article = {
-  id: string;
+  id: string | number;
   slug: string;
   title: string;
   subtitle?: string | null;
   excerpt?: string | null;
   content: string;
-  category: string;
+  category?: string | null;
   thumbnail_url?: string | null;
-  author_name: string;
+  thumbnail?: string | null;
+  author_name?: string;
+  author?: string | null;
   author_avatar?: string | null;
-  published_at: string;
+  published_at?: string;
+  createdAt?: string | null;
   likes: number;
 };
 
@@ -37,7 +40,11 @@ function calculateReadingTime(content: string): number {
 }
 
 function ArticleCard({ article }: { article: Article }) {
-  const readingTime = calculateReadingTime(article.content);
+  const readingTime = calculateReadingTime(article.content ?? "");
+  const authorName = article.author_name ?? article.author ?? "Admin TKITI";
+  const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
+  const thumbnailUrl = article.thumbnail_url ?? article.thumbnail ?? null;
+  const category = article.category ?? "Artikel";
 
   return (
     <motion.article
@@ -56,9 +63,9 @@ function ArticleCard({ article }: { article: Article }) {
       <Link to={`/article/${article.slug}`}>
         {/* Thumbnail */}
         <div className="relative h-48 overflow-hidden">
-          {article.thumbnail_url ? (
+          {thumbnailUrl ? (
             <ImageWithFallback
-              src={article.thumbnail_url}
+              src={thumbnailUrl}
               alt={article.title}
               className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-500"
             />
@@ -87,7 +94,7 @@ function ArticleCard({ article }: { article: Article }) {
               fontFamily: "JetBrains Mono, monospace",
             }}
           >
-            {article.category}
+            {category}
           </span>
         </div>
 
@@ -123,7 +130,7 @@ function ArticleCard({ article }: { article: Article }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="w-8 h-8 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-                <AvatarImage src={article.author_avatar || undefined} alt={article.author_name} />
+                <AvatarImage src={article.author_avatar || undefined} alt={authorName} />
                 <AvatarFallback
                   style={{
                     background: "rgba(62, 207, 178, 0.1)",
@@ -133,7 +140,7 @@ function ArticleCard({ article }: { article: Article }) {
                     fontWeight: 600,
                   }}
                 >
-                  {article.author_name
+                  {authorName
                     .split(" ")
                     .map((n) => n[0])
                     .slice(0, 2)
@@ -148,7 +155,7 @@ function ArticleCard({ article }: { article: Article }) {
                     color: "#e3e2e3",
                   }}
                 >
-                  {article.author_name}
+                  {authorName}
                 </p>
                 <p
                   className="text-xs"
@@ -157,7 +164,7 @@ function ArticleCard({ article }: { article: Article }) {
                     fontFamily: "JetBrains Mono, monospace",
                   }}
                 >
-                  {formatDate(article.published_at)} · {readingTime} min
+                  {formatDate(publishedAt)} · {readingTime} min
                 </p>
               </div>
             </div>
