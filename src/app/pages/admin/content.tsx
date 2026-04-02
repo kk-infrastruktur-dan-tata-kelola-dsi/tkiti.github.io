@@ -63,6 +63,15 @@ export function AdminContent() {
   const [saving, setSaving] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  function previewItems(section: SectionConfig) {
+    return section.fields
+      .map((field) => ({
+        label: field.label,
+        value: (values[field.name] ?? '').trim(),
+      }))
+      .filter((item) => item.value.length > 0)
+  }
+
   useEffect(() => {
     async function load() {
       const all: Record<string, string> = {}
@@ -121,7 +130,7 @@ export function AdminContent() {
       <Tabs defaultValue="hero">
         <TabsList className="bg-gray-100">
           {SECTIONS.map((s) => (
-            <TabsTrigger key={s.key} value={s.key}>
+            <TabsTrigger key={s.key} value={s.key} className="text-gray-600 data-[state=active]:text-gray-900">
               {s.label}
             </TabsTrigger>
           ))}
@@ -155,14 +164,14 @@ export function AdminContent() {
                             value={values[field.name] ?? ''}
                             onChange={(e) => setField(field.name, e.target.value)}
                             rows={4}
-                            className="bg-white border-gray-200 resize-none"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 resize-none"
                           />
                         ) : (
                           <Input
                             id={field.name}
                             value={values[field.name] ?? ''}
                             onChange={(e) => setField(field.name, e.target.value)}
-                            className="bg-white border-gray-200"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
                           />
                         )}
                       </div>
@@ -202,11 +211,3 @@ export function AdminContent() {
     </div>
   )
 }
-  function previewItems(section: SectionConfig) {
-    return section.fields
-      .map((field) => ({
-        label: field.label,
-        value: (values[field.name] ?? '').trim(),
-      }))
-      .filter((item) => item.value.length > 0)
-  }

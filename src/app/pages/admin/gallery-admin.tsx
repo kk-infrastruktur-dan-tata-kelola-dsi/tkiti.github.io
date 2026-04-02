@@ -104,7 +104,7 @@ export function AdminGallery() {
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Keterangan foto"
-                className="bg-white border-gray-200"
+                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-1.5">
@@ -113,7 +113,7 @@ export function AdminGallery() {
                 type="date"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="bg-white border-gray-200"
+                className="bg-white border-gray-200 text-gray-900"
               />
             </div>
             <div className="space-y-1.5">
@@ -123,7 +123,7 @@ export function AdminGallery() {
                 value={urutan}
                 onChange={(e) => setUrutan(e.target.value)}
                 placeholder="0"
-                className="bg-white border-gray-200"
+                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
               />
             </div>
           </div>

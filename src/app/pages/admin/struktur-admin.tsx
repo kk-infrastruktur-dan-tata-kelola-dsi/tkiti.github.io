@@ -148,10 +148,10 @@ export function AdminStruktur() {
       {/* Filter */}
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList className="bg-gray-100">
-          <TabsTrigger value="all">Semua</TabsTrigger>
-          <TabsTrigger value="kepemimpinan">Kepemimpinan</TabsTrigger>
-          <TabsTrigger value="anggota">Anggota</TabsTrigger>
-          <TabsTrigger value="kolaborasi">Kolaborasi</TabsTrigger>
+          <TabsTrigger value="all" className="text-gray-600 data-[state=active]:text-gray-900">Semua</TabsTrigger>
+          <TabsTrigger value="kepemimpinan" className="text-gray-600 data-[state=active]:text-gray-900">Kepemimpinan</TabsTrigger>
+          <TabsTrigger value="anggota" className="text-gray-600 data-[state=active]:text-gray-900">Anggota</TabsTrigger>
+          <TabsTrigger value="kolaborasi" className="text-gray-600 data-[state=active]:text-gray-900">Kolaborasi</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -254,19 +254,19 @@ export function AdminStruktur() {
 
             <div className="space-y-1.5">
               <Label className="text-sm">Nama <span className="text-red-500">*</span></Label>
-              <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="bg-white border-gray-200" />
+              <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400" />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm">Role <span className="text-red-500">*</span></Label>
-              <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Kepala Lab / Anggota / ..." className="bg-white border-gray-200" />
+              <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Kepala Lab / Anggota / ..." className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Divisi</Label>
                 <Select value={form.divisi} onValueChange={(v) => setForm({ ...form, divisi: v })}>
-                  <SelectTrigger className="bg-white border-gray-200">
+                  <SelectTrigger className="bg-white border-gray-200 text-gray-900">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -278,7 +278,7 @@ export function AdminStruktur() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Urutan</Label>
-                <Input type="number" value={form.urutan} onChange={(e) => setForm({ ...form, urutan: e.target.value })} placeholder="0" className="bg-white border-gray-200" />
+                <Input type="number" value={form.urutan} onChange={(e) => setForm({ ...form, urutan: e.target.value })} placeholder="0" className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400" />
               </div>
             </div>
           </div>
