@@ -38,10 +38,12 @@ type Anggota = {
 }
 
 type TemplateNode = {
+  id: number
   role: string
   parentRole: string | null
   urutan: number
   divisi: string | null
+  single: boolean
 }
 
 type Periode = {
@@ -58,6 +60,15 @@ const EMPTY_FORM: FormState = { nama: '', role: '' }
 type PeriodeForm = { nama: string; mulai: string; selesai: string }
 const EMPTY_PERIODE_FORM: PeriodeForm = { nama: '', mulai: '', selesai: '' }
 
+type MasterForm = {
+  role: string
+  parentRole: string
+  urutan: string
+  divisi: string
+  single: boolean
+}
+const EMPTY_MASTER_FORM: MasterForm = { role: '', parentRole: '', urutan: '', divisi: '', single: false }
+
 export function AdminStruktur() {
   const [items, setItems] = useState<Anggota[]>([])
   const [template, setTemplate] = useState<TemplateNode[]>([])
@@ -66,15 +77,20 @@ export function AdminStruktur() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [periodeDialogOpen, setPeriodeDialogOpen] = useState(false)
+  const [masterDialogOpen, setMasterDialogOpen] = useState(false)
   const [editingPeriodeId, setEditingPeriodeId] = useState<number | null>(null)
+  const [editingMasterId, setEditingMasterId] = useState<number | null>(null)
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [periodeForm, setPeriodeForm] = useState<PeriodeForm>(EMPTY_PERIODE_FORM)
+  const [masterForm, setMasterForm] = useState<MasterForm>(EMPTY_MASTER_FORM)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [saving, setSaving] = useState(false)
   const [creatingPeriode, setCreatingPeriode] = useState(false)
+  const [savingMaster, setSavingMaster] = useState(false)
   const [deletingPeriodeId, setDeletingPeriodeId] = useState<number | null>(null)
+  const [deletingMasterId, setDeletingMasterId] = useState<number | null>(null)
   const [activatingPeriodeId, setActivatingPeriodeId] = useState<number | null>(null)
   const [resetting, setResetting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -171,6 +187,69 @@ export function AdminStruktur() {
       toast.error(res.error ?? 'Gagal menghapus periode')
     }
     setDeletingPeriodeId(null)
+  }
+
+  function openCreateMaster() {
+    setEditingMasterId(null)
+    setMasterForm(EMPTY_MASTER_FORM)
+    setMasterDialogOpen(true)
+  }
+
+  function openEditMaster(node: TemplateNode) {
+    setEditingMasterId(node.id)
+    setMasterForm({
+      role: node.role,
+      parentRole: node.parentRole ?? '',
+      urutan: String(node.urutan),
+      divisi: node.divisi ?? '',
+      single: node.single,
+    })
+    setMasterDialogOpen(true)
+  }
+
+  async function submitMaster() {
+    if (!masterForm.role.trim()) {
+      toast.error('Role master wajib diisi')
+      return
+    }
+    const urutan = Number(masterForm.urutan)
+    if (!Number.isInteger(urutan) || urutan <= 0) {
+      toast.error('Urutan master harus angka > 0')
+      return
+    }
+    setSavingMaster(true)
+    const res = await apiRequest<TemplateNode>(editingMasterId ? `/struktur/master/${editingMasterId}` : '/struktur/master', {
+      method: editingMasterId ? 'PUT' : 'POST',
+      body: JSON.stringify({
+        role: masterForm.role.trim(),
+        parentRole: masterForm.parentRole.trim() || null,
+        urutan,
+        divisi: masterForm.divisi.trim() || null,
+        single: masterForm.single,
+      }),
+    })
+    if (res.success) {
+      toast.success(editingMasterId ? 'Master struktur diperbarui' : 'Master struktur ditambahkan')
+      setMasterDialogOpen(false)
+      setEditingMasterId(null)
+      setMasterForm(EMPTY_MASTER_FORM)
+      await fetchData(effectivePeriodeId)
+    } else {
+      toast.error(res.error ?? 'Gagal menyimpan master struktur')
+    }
+    setSavingMaster(false)
+  }
+
+  async function deleteMaster(id: number) {
+    setDeletingMasterId(id)
+    const res = await apiRequest(`/struktur/master/${id}`, { method: 'DELETE' })
+    if (res.success) {
+      toast.success('Master struktur dihapus')
+      await fetchData(effectivePeriodeId)
+    } else {
+      toast.error(res.error ?? 'Gagal menghapus master struktur')
+    }
+    setDeletingMasterId(null)
   }
 
   async function activatePeriode(id: number) {
@@ -371,12 +450,47 @@ export function AdminStruktur() {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Template Role (Fixed Tree)</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700">Struktur Master</h2>
+          <Button size="sm" variant="outline" onClick={openCreateMaster}>
+            + Tambah Role Master
+          </Button>
+        </div>
         <div className="grid gap-2 md:grid-cols-2">
           {template.map((node) => (
             <div key={node.role} className="rounded border border-gray-100 px-3 py-2 text-sm">
-              <p className="font-medium text-gray-900">{node.role}</p>
-              <p className="text-xs text-gray-500">Parent: {node.parentRole ?? 'ROOT'} · Urutan: {node.urutan}</p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="font-medium text-gray-900">{node.role}</p>
+                  <p className="text-xs text-gray-500">
+                    Parent: {node.parentRole ?? 'ROOT'} · Urutan: {node.urutan} · {node.single ? 'Single' : 'Multi'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => openEditMaster(node)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600" disabled={deletingMasterId === node.id}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus role master?</AlertDialogTitle>
+                        <AlertDialogDescription>Role master ini akan dihapus jika tidak dipakai dan tidak punya child role.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={() => deleteMaster(node.id)}>
+                          Hapus
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -512,6 +626,63 @@ export function AdminStruktur() {
             </Button>
             <Button onClick={submitPeriode} disabled={creatingPeriode}>
               {creatingPeriode ? 'Menyimpan...' : editingPeriodeId ? 'Update' : 'Simpan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={masterDialogOpen} onOpenChange={setMasterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingMasterId ? 'Edit Role Master' : 'Tambah Role Master'}</DialogTitle>
+            <DialogDescription>Atur parent dan urutan untuk menentukan tree struktur organisasi.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Input value={masterForm.role} onChange={(e) => setMasterForm((prev) => ({ ...prev, role: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Parent Role (opsional)</Label>
+              <Input
+                list="parent-role-options"
+                value={masterForm.parentRole}
+                onChange={(e) => setMasterForm((prev) => ({ ...prev, parentRole: e.target.value }))}
+                placeholder="ROOT jika kosong"
+              />
+              <datalist id="parent-role-options">
+                {template
+                  .filter((node) => node.id !== editingMasterId)
+                  .map((node) => (
+                    <option key={node.id} value={node.role} />
+                  ))}
+              </datalist>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>Urutan</Label>
+                <Input type="number" value={masterForm.urutan} onChange={(e) => setMasterForm((prev) => ({ ...prev, urutan: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Divisi</Label>
+                <Input value={masterForm.divisi} onChange={(e) => setMasterForm((prev) => ({ ...prev, divisi: e.target.value }))} placeholder="kepemimpinan / anggota / kolaborasi" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={masterForm.single}
+                onChange={(e) => setMasterForm((prev) => ({ ...prev, single: e.target.checked }))}
+              />
+              Role tunggal (hanya 1 orang per periode)
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMasterDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={submitMaster} disabled={savingMaster}>
+              {savingMaster ? 'Menyimpan...' : editingMasterId ? 'Update' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>

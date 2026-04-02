@@ -47,6 +47,15 @@ sqlite.exec(`
     created_at integer
   );
 
+  CREATE TABLE IF NOT EXISTS struktur_master (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    role text NOT NULL UNIQUE,
+    parent_role text,
+    urutan integer NOT NULL,
+    divisi text,
+    single integer DEFAULT 0
+  );
+
   CREATE TABLE IF NOT EXISTS gallery (
     id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
     src text NOT NULL,
@@ -80,6 +89,7 @@ sqlite.exec(`
 
 const anggotaColumns = sqlite.prepare(`PRAGMA table_info(anggota)`).all() as Array<{ name: string }>
 const periodeColumns = sqlite.prepare(`PRAGMA table_info(struktur_periode)`).all() as Array<{ name: string }>
+const masterColumns = sqlite.prepare(`PRAGMA table_info(struktur_master)`).all() as Array<{ name: string }>
 if (periodeColumns.length === 0) {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS struktur_periode (
@@ -97,6 +107,21 @@ if (!anggotaColumns.some((col) => col.name === 'periode_id')) {
 }
 if (!anggotaColumns.some((col) => col.name === 'parent_id')) {
   sqlite.exec(`ALTER TABLE anggota ADD COLUMN parent_id integer;`)
+}
+if (masterColumns.length === 0) {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS struktur_master (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      role text NOT NULL UNIQUE,
+      parent_role text,
+      urutan integer NOT NULL,
+      divisi text,
+      single integer DEFAULT 0
+    );
+  `)
+}
+if (!masterColumns.some((col) => col.name === 'single')) {
+  sqlite.exec(`ALTER TABLE struktur_master ADD COLUMN single integer DEFAULT 0;`)
 }
 
 export const db = drizzle(sqlite, { schema })

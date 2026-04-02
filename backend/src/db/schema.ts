@@ -30,6 +30,15 @@ export const strukturPeriode = sqliteTable('struktur_periode', {
   createdAt: integer('created_at', { mode: 'timestamp' }),
 })
 
+export const strukturMaster = sqliteTable('struktur_master', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  role: text('role').notNull().unique(),
+  parentRole: text('parent_role'),
+  urutan: integer('urutan').notNull(),
+  divisi: text('divisi'),
+  single: integer('single', { mode: 'boolean' }).default(false),
+})
+
 // ─── gallery ──────────────────────────────────────────────────────────────────
 // Foto dokumentasi kegiatan lab
 export const gallery = sqliteTable('gallery', {
@@ -73,6 +82,9 @@ export type NewAnggota = typeof anggota.$inferInsert
 
 export type StrukturPeriode = typeof strukturPeriode.$inferSelect
 export type NewStrukturPeriode = typeof strukturPeriode.$inferInsert
+
+export type StrukturMaster = typeof strukturMaster.$inferSelect
+export type NewStrukturMaster = typeof strukturMaster.$inferInsert
 
 export type Gallery = typeof gallery.$inferSelect
 export type NewGallery = typeof gallery.$inferInsert

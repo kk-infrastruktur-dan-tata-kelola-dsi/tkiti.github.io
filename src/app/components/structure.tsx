@@ -28,6 +28,13 @@ type Periode = {
   isActive: boolean;
 };
 
+function formatPeriodeLabel(periode: Periode) {
+  if (periode.mulai || periode.selesai) {
+    return `${periode.nama} (${periode.mulai ?? '-'} s/d ${periode.selesai ?? '-'})`;
+  }
+  return periode.nama;
+}
+
 function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact?: boolean }) {
   const initials = node.nama
     .split(" ")
@@ -157,27 +164,54 @@ export function Structure() {
           //STRUCTURE_COL
         </motion.h2>
 
-        <div className="mb-8 flex flex-wrap justify-center gap-2">
-          {periodes.map((periode) => {
-            const isSelected = selectedPeriodeId === periode.id;
-            return (
-              <button
-                key={periode.id}
-                type="button"
-                onClick={() => onChangePeriode(periode.id)}
-                className="rounded-full border px-3 py-1 text-xs transition-colors"
-                style={{
-                  borderColor: isSelected ? "rgba(62, 207, 178, 0.55)" : "rgba(62, 207, 178, 0.2)",
-                  color: isSelected ? "#61eccd" : "#9fb6af",
-                  background: isSelected ? "rgba(62, 207, 178, 0.08)" : "transparent",
-                  fontFamily: "JetBrains Mono, monospace",
-                }}
-              >
-                {periode.nama}
-                {periode.isActive ? " (Aktif)" : ""}
-              </button>
-            );
-          })}
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div
+            className="inline-flex items-center gap-2 rounded-full border px-3 py-1"
+            style={{ borderColor: "rgba(62, 207, 178, 0.2)", background: "rgba(8, 10, 11, 0.45)" }}
+          >
+            <label htmlFor="periode-select" className="text-xs" style={{ color: "#9fb6af", fontFamily: "JetBrains Mono, monospace" }}>
+              Periode:
+            </label>
+            <select
+              id="periode-select"
+              value={selectedPeriodeId ?? ""}
+              onChange={(e) => onChangePeriode(Number(e.target.value))}
+              className="rounded-full border px-2 py-1 text-xs outline-none"
+              style={{
+                borderColor: "rgba(62, 207, 178, 0.35)",
+                color: "#61eccd",
+                background: "rgba(62, 207, 178, 0.08)",
+                fontFamily: "JetBrains Mono, monospace",
+              }}
+            >
+              {periodes.map((periode) => (
+                <option key={periode.id} value={periode.id}>
+                  {formatPeriodeLabel(periode)}{periode.isActive ? " [Aktif]" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {periodes.map((periode) => {
+              const isSelected = selectedPeriodeId === periode.id;
+              return (
+                <button
+                  key={periode.id}
+                  type="button"
+                  onClick={() => onChangePeriode(periode.id)}
+                  className="rounded-full border px-3 py-1 text-xs transition-colors"
+                  style={{
+                    borderColor: isSelected ? "rgba(62, 207, 178, 0.55)" : "rgba(62, 207, 178, 0.2)",
+                    color: isSelected ? "#61eccd" : "#9fb6af",
+                    background: isSelected ? "rgba(62, 207, 178, 0.08)" : "transparent",
+                    fontFamily: "JetBrains Mono, monospace",
+                  }}
+                >
+                  {periode.nama}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <motion.div
