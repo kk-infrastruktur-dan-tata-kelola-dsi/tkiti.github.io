@@ -67,6 +67,7 @@ export function AdminArticleEditor() {
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('')
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Load artikel untuk mode edit
@@ -89,6 +90,7 @@ export function AdminArticleEditor() {
             published: article.published,
           })
           if (article.thumbnail) setThumbnailPreview(article.thumbnail)
+          setThumbnailFile(null)
           setSlugManual(true)
         }
       })
@@ -110,9 +112,7 @@ export function AdminArticleEditor() {
     if (!file) return
     const url = URL.createObjectURL(file)
     setThumbnailPreview(url)
-    // Simpan nama file sebagai placeholder; upload sebenarnya terjadi saat save
-    // (TODO: upload ke endpoint gallery lalu set path)
-    setField('thumbnail', file.name)
+    setThumbnailFile(file)
   }
 
   async function handleSave() {
@@ -122,13 +122,29 @@ export function AdminArticleEditor() {
 
     setSaving(true)
     try {
+      let thumbnailPath = form.thumbnail.trim() || null
+
+      if (thumbnailFile) {
+        const formData = new FormData()
+        formData.append('file', thumbnailFile)
+        const uploadRes = await apiRequest<{ path: string }>('/articles/upload-thumbnail', {
+          method: 'POST',
+          body: formData,
+        })
+        if (!uploadRes.success || !uploadRes.data?.path) {
+          toast.error(uploadRes.error ?? 'Gagal upload thumbnail')
+          return
+        }
+        thumbnailPath = uploadRes.data.path
+      }
+
       const payload = {
         title: form.title.trim(),
         slug: form.slug.trim(),
         excerpt: form.excerpt.trim() || null,
         author: form.author.trim() || null,
         content: form.content,
-        thumbnail: form.thumbnail.trim() || null,
+        thumbnail: thumbnailPath,
         published: form.published,
       }
 
@@ -142,6 +158,11 @@ export function AdminArticleEditor() {
       }
 
       toast.success(isNew ? 'Artikel berhasil dibuat' : 'Artikel berhasil diperbarui')
+      if (thumbnailPath) {
+        setField('thumbnail', thumbnailPath)
+        setThumbnailPreview(thumbnailPath)
+      }
+      setThumbnailFile(null)
       navigate('/admin/articles')
     } finally {
       setSaving(false)

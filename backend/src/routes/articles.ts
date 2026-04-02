@@ -3,6 +3,7 @@ import { eq, desc, sql } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { articles } from '../db/schema.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { deleteFile, saveFile, validateImage } from '../lib/upload.js'
 
 export const articleRoutes = new Hono()
 
@@ -36,6 +37,30 @@ articleRoutes.get('/', (c) => {
 articleRoutes.get('/all', authMiddleware, (c) => {
   const rows = db.select().from(articles).orderBy(desc(articles.createdAt)).all()
   return c.json({ success: true, data: rows })
+})
+
+// POST /articles/upload-thumbnail [AUTH]
+// Multipart fields: file (required)
+articleRoutes.post('/upload-thumbnail', authMiddleware, async (c) => {
+  let body: Record<string, string | File>
+  try {
+    body = await c.req.parseBody()
+  } catch {
+    return c.json({ success: false, error: 'Gagal parse form data' }, 400)
+  }
+
+  const file = body['file']
+  if (!(file instanceof File)) {
+    return c.json({ success: false, error: 'Field "file" (image) diperlukan' }, 400)
+  }
+
+  const validationError = validateImage(file)
+  if (validationError) {
+    return c.json({ success: false, error: validationError }, 422)
+  }
+
+  const path = await saveFile(file, 'articles')
+  return c.json({ success: true, data: { path } }, 201)
 })
 
 // GET /articles/:slug
@@ -182,7 +207,11 @@ articleRoutes.delete('/:id', authMiddleware, (c) => {
   const existing = db.select({ id: articles.id }).from(articles).where(eq(articles.id, id)).get()
   if (!existing) return c.json({ success: false, error: 'Artikel tidak ditemukan' }, 404)
 
+  const thumbnailPath = db.select({ thumbnail: articles.thumbnail }).from(articles).where(eq(articles.id, id)).get()?.thumbnail
   db.delete(articles).where(eq(articles.id, id)).run()
+  if (thumbnailPath?.startsWith('uploads/')) {
+    void deleteFile(thumbnailPath)
+  }
 
   return c.json({ success: true, message: 'Artikel berhasil dihapus' })
 })
