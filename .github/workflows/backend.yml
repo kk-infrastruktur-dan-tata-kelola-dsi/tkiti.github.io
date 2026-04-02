@@ -20,7 +20,16 @@ jobs:
           rsync -av --delete \
             --exclude='data/' \
             --exclude='uploads/' \
-            --no-perms --no-owner --no-group \
+            --no-perms --no-owner --no-group --no-times \
+            backend/ /www/wwwroot/tkiti-web-profile/ || true
+
+      - name: Retry rsync without delete
+        if: failure()
+        run: |
+          rsync -av \
+            --exclude='data/' \
+            --exclude='uploads/' \
+            --no-perms --no-owner --no-group --no-times \
             backend/ /www/wwwroot/tkiti-web-profile/
 
       - name: Fix permissions
