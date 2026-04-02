@@ -41,10 +41,12 @@ jobs:
           find /www/wwwroot/tkiti-web-profile/backend \
             -path /www/wwwroot/tkiti-web-profile/backend/data -prune -o \
             -path /www/wwwroot/tkiti-web-profile/backend/uploads -prune -o \
+            -name .env -prune -o \
             -type d -exec chmod 755 {} +
           find /www/wwwroot/tkiti-web-profile/backend \
             -path /www/wwwroot/tkiti-web-profile/backend/data -prune -o \
             -path /www/wwwroot/tkiti-web-profile/backend/uploads -prune -o \
+            -name .env -prune -o \
             -type f -exec chmod 644 {} +
 
       - name: Validate backend env file
