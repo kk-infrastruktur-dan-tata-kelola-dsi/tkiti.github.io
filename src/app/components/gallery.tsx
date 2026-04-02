@@ -22,7 +22,7 @@ export function Gallery() {
   useEffect(() => {
     async function fetchGallery() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: GalleryImage[] }>("/api/gallery");
+        const res = await apiRequest<{ success: boolean; data?: GalleryImage[] }>("/gallery");
         if (res.success && res.data) {
           setImages(res.data);
         }

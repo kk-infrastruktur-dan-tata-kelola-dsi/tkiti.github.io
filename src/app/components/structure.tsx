@@ -19,7 +19,7 @@ export function Structure() {
   useEffect(() => {
     async function fetchMembers() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: TeamMember[] }>("/api/structure");
+        const res = await apiRequest<{ success: boolean; data?: TeamMember[] }>("/struktur");
         if (res.success && res.data) {
           setMembers(res.data);
         }

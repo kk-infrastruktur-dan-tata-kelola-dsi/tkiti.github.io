@@ -187,7 +187,7 @@ export function Articles() {
   useEffect(() => {
     async function fetchArticles() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: Article[] }>("/api/articles");
+        const res = await apiRequest<{ success: boolean; data?: Article[] }>("/articles");
         if (res.success && res.data) {
           setArticles(res.data);
         }
