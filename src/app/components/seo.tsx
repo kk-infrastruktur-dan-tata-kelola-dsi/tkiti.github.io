@@ -60,6 +60,30 @@ export function SEO({
       "https://instagram.com/lab_TATI",
       "https://linkedin.com/company/tkiti-unand",
       "https://github.com/tkiti-unand"
+    ],
+    "hasPart": [
+      { "@type": "WebPage", "name": "Beranda", "url": `${DEFAULT_URL}/` },
+      { "@type": "WebPage", "name": "Sejarah", "url": `${DEFAULT_URL}/sejarah` },
+      { "@type": "WebPage", "name": "Kegiatan", "url": `${DEFAULT_URL}/kegiatan` },
+      { "@type": "WebPage", "name": "Struktur", "url": `${DEFAULT_URL}/struktur` },
+      { "@type": "WebPage", "name": "Gallery", "url": `${DEFAULT_URL}/gallery` },
+      { "@type": "WebPage", "name": "Kontak", "url": `${DEFAULT_URL}/kontak` },
+      { "@type": "WebPage", "name": "Article", "url": `${DEFAULT_URL}/article` }
+    ]
+  };
+
+  const siteNavigationSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "TKITI Navigation",
+    "itemListElement": [
+      { "@type": "SiteNavigationElement", "position": 1, "name": "Beranda", "url": `${DEFAULT_URL}/` },
+      { "@type": "SiteNavigationElement", "position": 2, "name": "Sejarah", "url": `${DEFAULT_URL}/sejarah` },
+      { "@type": "SiteNavigationElement", "position": 3, "name": "Kegiatan", "url": `${DEFAULT_URL}/kegiatan` },
+      { "@type": "SiteNavigationElement", "position": 4, "name": "Struktur", "url": `${DEFAULT_URL}/struktur` },
+      { "@type": "SiteNavigationElement", "position": 5, "name": "Gallery", "url": `${DEFAULT_URL}/gallery` },
+      { "@type": "SiteNavigationElement", "position": 6, "name": "Kontak", "url": `${DEFAULT_URL}/kontak` },
+      { "@type": "SiteNavigationElement", "position": 7, "name": "Article", "url": `${DEFAULT_URL}/article` }
     ]
   };
 
@@ -110,6 +134,11 @@ export function SEO({
       <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={seoDescription} />
       <meta property="og:image" content={fullImageUrl} />
+      <meta property="og:image:secure_url" content={fullImageUrl} />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:alt" content="Logo Laboratorium TKITI" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content={SITE_NAME} />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
@@ -133,6 +162,9 @@ export function SEO({
       {/* JSON-LD Structured Data */}
       <script type="application/ld+json">
         {JSON.stringify(organizationSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(siteNavigationSchema)}
       </script>
       {articleSchema && (
         <script type="application/ld+json">

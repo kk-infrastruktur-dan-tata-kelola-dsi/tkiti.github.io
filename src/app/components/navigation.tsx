@@ -139,17 +139,19 @@ export function Navigation() {
           />
         </a>
 
-        <div className="hidden md:flex items-center gap-12">
+        <div className="hidden md:flex items-center gap-3">
           {navItems.slice(1).map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
               onClick={(e) => handleSectionClick(e, item.id)}
-              className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
+              className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-1.5"
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '14px',
-                color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+                fontSize: '12px',
+                color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+                borderColor: activeSection === item.id ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
+                background: activeSection === item.id ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
               }}
             >
               {item.label}
@@ -157,11 +159,13 @@ export function Navigation() {
           ))}
           <Link
             to="/article"
-            className="uppercase tracking-[0.15em] hover:text-[#3ECFB2] transition-colors duration-300"
+            className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-1.5"
             style={{
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-              color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+              fontSize: '12px',
+              color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+              borderColor: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
+              background: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
             }}
           >
             Article
