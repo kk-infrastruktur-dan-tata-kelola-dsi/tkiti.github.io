@@ -1,10 +1,12 @@
 import { motion } from "motion/react";
+import { useNavigate } from "react-router";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useContent } from "../hooks/useContent";
 
 const heroEase = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function Hero() {
+  const navigate = useNavigate();
   const { data } = useContent("hero");
   const subtitle = data["hero.subtitle"] ?? "SISTEM INFORMASI · UNIVERSITAS ANDALAS";
   const title = data["hero.title"] ?? "Laboratorium Tata Kelola &";
@@ -106,6 +108,7 @@ export function Hero() {
             }}
             whileHover={{ y: -3, boxShadow: '0 0 50px rgba(62, 207, 178, 0.25)' }}
             transition={{ duration: 0.25 }}
+            onClick={() => navigate("/kegiatan")}
           >
             {ctaPrimary}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,6 +126,7 @@ export function Hero() {
             }}
             whileHover={{ y: -3, backgroundColor: '#292a2b' }}
             transition={{ duration: 0.25 }}
+            onClick={() => navigate("/sejarah")}
           >
             {ctaSecondary}
           </motion.button>

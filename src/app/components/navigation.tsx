@@ -34,12 +34,12 @@ export function Navigation() {
       }
     } else {
       // If we're on a different page, navigate to home first, then scroll
-      navigate('/');
+      setActiveSection(sectionId);
+      navigate(`/${sectionId}`);
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
           const offsetTop = element.offsetTop - 80;
-          setActiveSection(sectionId);
           window.scrollTo({
             top: offsetTop,
             behavior: 'smooth'
@@ -50,6 +50,16 @@ export function Navigation() {
   };
 
   useEffect(() => {
+    const pathSectionMap: Record<string, string> = {
+      "/sejarah": "sejarah",
+      "/kegiatan": "kegiatan",
+      "/struktur": "struktur",
+      "/gallery": "gallery",
+      "/kontak": "kontak",
+    };
+    const sectionFromPath = pathSectionMap[location.pathname];
+    if (sectionFromPath) setActiveSection(sectionFromPath);
+
     if (location.pathname !== "/") return;
     const sections = navItems
       .map((item) => document.getElementById(item.id))
@@ -98,7 +108,7 @@ export function Navigation() {
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '14px',
-                color: location.pathname === "/" && activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+                color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
               }}
             >
               {item.label}
@@ -122,7 +132,7 @@ export function Navigation() {
             style={{
               fontFamily: 'JetBrains Mono, monospace',
               fontSize: '14px',
-              color: location.pathname === "/" && activeSection === "kontak" ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
+              color: activeSection === "kontak" ? '#3ECFB2' : 'rgba(227, 226, 227, 0.6)',
             }}
           >
             Kontak
