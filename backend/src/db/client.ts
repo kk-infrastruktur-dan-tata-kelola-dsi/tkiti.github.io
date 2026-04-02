@@ -20,4 +20,51 @@ const sqlite = new Database(dbPath)
 sqlite.pragma('journal_mode = WAL')
 sqlite.pragma('foreign_keys = ON')
 
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS content (
+    key text PRIMARY KEY NOT NULL,
+    value text NOT NULL,
+    updated_at integer
+  );
+
+  CREATE TABLE IF NOT EXISTS anggota (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    nama text NOT NULL,
+    role text NOT NULL,
+    divisi text,
+    photo text,
+    urutan integer
+  );
+
+  CREATE TABLE IF NOT EXISTS gallery (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    src text NOT NULL,
+    caption text,
+    tanggal text,
+    urutan integer
+  );
+
+  CREATE TABLE IF NOT EXISTS articles (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    slug text NOT NULL,
+    title text NOT NULL,
+    excerpt text,
+    content text NOT NULL,
+    thumbnail text,
+    author text,
+    published integer DEFAULT false,
+    likes integer DEFAULT 0,
+    created_at integer,
+    updated_at integer
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS articles_slug_unique ON articles (slug);
+
+  CREATE TABLE IF NOT EXISTS users (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    username text NOT NULL,
+    password_hash text NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users (username);
+`)
+
 export const db = drizzle(sqlite, { schema })
