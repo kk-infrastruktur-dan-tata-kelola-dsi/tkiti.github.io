@@ -70,6 +70,16 @@ jobs:
         working-directory: /www/wwwroot/tkiti-web-profile/backend
         run: docker compose down --remove-orphans || true
 
+      - name: Force remove containers using port 5000
+        run: |
+          CONTAINERS=$(docker ps -q --filter "publish=5000")
+          if [ -n "$CONTAINERS" ]; then
+            echo "Removing containers that publish host port 5000: $CONTAINERS"
+            docker rm -f $CONTAINERS
+          else
+            echo "No container publishing host port 5000."
+          fi
+
       - name: Check port 5000 availability
         run: |
           if ss -ltn '( sport = :5000 )' | grep -q ':5000'; then
