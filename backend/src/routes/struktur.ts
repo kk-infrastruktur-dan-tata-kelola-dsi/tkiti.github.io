@@ -141,10 +141,33 @@ function getExpectedParentId(rows: StrukturRow[], row: StrukturRow) {
   const master = getMasterByRole(row.role)
   if (!master?.parentRole) return null
   const parentRole = master.parentRole
-  const candidates = rows
-    .filter((item) => normalizeRole(item.role) === normalizeRole(parentRole))
-    .sort((a, b) => a.id - b.id)
-  return candidates[0]?.id ?? null
+  const candidates = rows.filter((item) => normalizeRole(item.role) === normalizeRole(parentRole))
+  if (candidates.length === 0) return null
+
+  // For "Dosen / Anggota", all dosen nodes must be direct children of Ketua (root single parent).
+  if (normalizeRole(row.role) === normalizeRole('Dosen / Anggota Kelompok Keilmuan')) {
+    const rootParent = candidates.sort((a, b) => a.id - b.id)[0]
+    return rootParent?.id ?? null
+  }
+
+  // For downstream roles, choose parent candidate that is already attached correctly by hierarchy depth.
+  const withDepth = candidates
+    .map((candidate) => {
+      let depth = 0
+      let cursor: StrukturRow | undefined = candidate
+      let guard = 0
+      while (cursor?.parentId && guard < 20) {
+        const parent = rows.find((r) => r.id === cursor!.parentId)
+        if (!parent) break
+        depth += 1
+        cursor = parent
+        guard += 1
+      }
+      return { candidate, depth }
+    })
+    .sort((a, b) => a.depth - b.depth || a.candidate.id - b.candidate.id)
+
+  return withDepth[0]?.candidate.id ?? null
 }
 
 function syncHierarchyForPeriode(periodeId: number) {
