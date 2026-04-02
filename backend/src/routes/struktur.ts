@@ -7,18 +7,46 @@ import { saveFile, deleteFile, validateImage } from '../lib/upload.js'
 
 export const strukturRoutes = new Hono()
 
-type StrukturReorderItem = {
-  id: number
-  parentId: number | null
+type StrukturTemplateNode = {
+  role: string
+  parentRole: string | null
   urutan: number
+  divisi: string | null
 }
 
-function parseNullableInteger(value: unknown): number | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const parsed = Number(trimmed)
-  return Number.isInteger(parsed) ? parsed : null
+const STRUKTUR_TEMPLATE: StrukturTemplateNode[] = [
+  { role: 'Ketua Kelompok Keilmuan', parentRole: null, urutan: 1, divisi: 'kepemimpinan' },
+  { role: 'Dosen / Anggota Kelompok Keilmuan', parentRole: 'Ketua Kelompok Keilmuan', urutan: 1, divisi: 'kepemimpinan' },
+  { role: 'Asisten Peneliti', parentRole: 'Ketua Kelompok Keilmuan', urutan: 2, divisi: 'anggota' },
+  { role: 'Koordinator Asisten', parentRole: 'Asisten Peneliti', urutan: 1, divisi: 'anggota' },
+  { role: 'Bendahara', parentRole: 'Asisten Peneliti', urutan: 2, divisi: 'anggota' },
+  { role: 'Sekretaris', parentRole: 'Asisten Peneliti', urutan: 3, divisi: 'anggota' },
+  { role: 'Divisi Penelitian dan Pengembangan', parentRole: 'Asisten Peneliti', urutan: 4, divisi: 'kolaborasi' },
+  { role: 'Koordinator Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 1, divisi: 'kolaborasi' },
+  { role: 'Anggota Divisi Penelitian dan Pengembangan', parentRole: 'Divisi Penelitian dan Pengembangan', urutan: 2, divisi: 'kolaborasi' },
+  { role: 'Divisi Pengabdian dan Pelatihan', parentRole: 'Asisten Peneliti', urutan: 5, divisi: 'kolaborasi' },
+  { role: 'Koordinator Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 1, divisi: 'kolaborasi' },
+  { role: 'Anggota Divisi Pengabdian dan Pelatihan', parentRole: 'Divisi Pengabdian dan Pelatihan', urutan: 2, divisi: 'kolaborasi' },
+  { role: 'Divisi Rumah Tangga', parentRole: 'Asisten Peneliti', urutan: 6, divisi: 'kolaborasi' },
+  { role: 'Koordinator Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 1, divisi: 'kolaborasi' },
+  { role: 'Anggota Divisi Rumah Tangga', parentRole: 'Divisi Rumah Tangga', urutan: 2, divisi: 'kolaborasi' },
+]
+
+function normalizeRole(input: string): string {
+  return input.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+function getTemplateByRole(role: string): StrukturTemplateNode | null {
+  const target = normalizeRole(role)
+  return STRUKTUR_TEMPLATE.find((entry) => normalizeRole(entry.role) === target) ?? null
+}
+
+function resolveParentId(role: string, rows: Array<{ id: number; role: string }>): number | null {
+  const template = getTemplateByRole(role)
+  if (!template || !template.parentRole) return null
+  const parentRoleNormalized = normalizeRole(template.parentRole)
+  const parent = rows.find((row) => normalizeRole(row.role) === parentRoleNormalized)
+  return parent?.id ?? null
 }
 
 // GET /struktur — list anggota (flat) sesuai urutan tree
@@ -33,7 +61,6 @@ strukturRoutes.get('/', (c) => {
 })
 
 // POST /struktur [AUTH]
-// Multipart fields: nama, role, divisi (optional), urutan (optional), photo (optional)
 strukturRoutes.post('/', authMiddleware, async (c) => {
   let body: Record<string, string | File>
   try {
@@ -49,16 +76,15 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
     return c.json({ success: false, error: 'Field "nama" dan "role" diperlukan' }, 400)
   }
 
-  const divisi = typeof body['divisi'] === 'string' ? body['divisi'].trim() || null : null
-  const urutan = parseNullableInteger(body['urutan'])
-  const parentId = parseNullableInteger(body['parentId'])
-
-  if (parentId !== null) {
-    const parentExists = db.select().from(anggota).where(eq(anggota.id, parentId)).get()
-    if (!parentExists) {
-      return c.json({ success: false, error: 'Parent tidak ditemukan' }, 400)
-    }
+  const template = getTemplateByRole(role)
+  if (!template) {
+    return c.json({ success: false, error: 'Role tidak ada dalam template struktur organisasi' }, 400)
   }
+
+  const existing = db.select().from(anggota).all()
+  const parentId = resolveParentId(role, existing.map((item) => ({ id: item.id, role: item.role })))
+  const urutan = template.urutan
+  const divisi = template.divisi
 
   let photo: string | null = null
   const photoFile = body['photo']
@@ -75,55 +101,6 @@ strukturRoutes.post('/', authMiddleware, async (c) => {
     .get()
 
   return c.json({ success: true, data: inserted }, 201)
-})
-
-// PUT /struktur/reorder [AUTH]
-strukturRoutes.put('/reorder', authMiddleware, async (c) => {
-  const payload = await c.req.json<{ nodes?: StrukturReorderItem[] }>().catch(() => null)
-  const nodes = payload?.nodes
-
-  if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
-    return c.json({ success: false, error: 'Payload nodes wajib diisi' }, 400)
-  }
-
-  const rows = db.select().from(anggota).all()
-  const existingIds = new Set(rows.map((row) => row.id))
-  if (nodes.some((node) => !existingIds.has(node.id))) {
-    return c.json({ success: false, error: 'Ada node dengan ID tidak valid' }, 400)
-  }
-
-  const nodeMap = new Map(nodes.map((node) => [node.id, node]))
-  for (const node of nodes) {
-    if (!Number.isInteger(node.urutan) || node.urutan < 1) {
-      return c.json({ success: false, error: 'Urutan harus bilangan bulat >= 1' }, 400)
-    }
-    if (node.parentId !== null && !existingIds.has(node.parentId)) {
-      return c.json({ success: false, error: 'Parent ID tidak valid' }, 400)
-    }
-    if (node.parentId === node.id) {
-      return c.json({ success: false, error: 'Parent tidak boleh diri sendiri' }, 400)
-    }
-  }
-
-  for (const node of nodes) {
-    let parentId = node.parentId
-    const visited = new Set<number>([node.id])
-    while (parentId !== null) {
-      if (visited.has(parentId)) {
-        return c.json({ success: false, error: 'Struktur tree tidak valid (loop terdeteksi)' }, 400)
-      }
-      visited.add(parentId)
-      parentId = nodeMap.get(parentId)?.parentId ?? null
-    }
-  }
-
-  db.transaction((tx) => {
-    for (const node of nodes) {
-      tx.update(anggota).set({ parentId: node.parentId, urutan: node.urutan }).where(eq(anggota.id, node.id)).run()
-    }
-  })
-
-  return c.json({ success: true, message: 'Urutan struktur berhasil diperbarui' })
 })
 
 // PUT /struktur/:id [AUTH]
@@ -150,22 +127,29 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
     photo: string | null
   }> = {}
 
-  if (typeof body['nama'] === 'string') updates.nama = body['nama'].trim()
-  if (typeof body['role'] === 'string') updates.role = body['role'].trim()
-  if (typeof body['divisi'] === 'string') updates.divisi = body['divisi'].trim() || null
-  if (typeof body['urutan'] === 'string') updates.urutan = parseNullableInteger(body['urutan'])
-  if (typeof body['parentId'] === 'string') {
-    const parsedParentId = parseNullableInteger(body['parentId'])
-    if (parsedParentId === id) {
-      return c.json({ success: false, error: 'Parent tidak boleh diri sendiri' }, 400)
+  if (typeof body['nama'] === 'string') {
+    const trimmed = body['nama'].trim()
+    if (!trimmed) return c.json({ success: false, error: 'Nama tidak boleh kosong' }, 400)
+    updates.nama = trimmed
+  }
+  if (typeof body['role'] === 'string') {
+    const nextRole = body['role'].trim()
+    const template = getTemplateByRole(nextRole)
+    if (!template) {
+      return c.json({ success: false, error: 'Role tidak ada dalam template struktur organisasi' }, 400)
     }
-    if (parsedParentId !== null) {
-      const parentExists = db.select().from(anggota).where(eq(anggota.id, parsedParentId)).get()
-      if (!parentExists) {
-        return c.json({ success: false, error: 'Parent tidak ditemukan' }, 400)
-      }
-    }
-    updates.parentId = parsedParentId
+    updates.role = nextRole
+    updates.divisi = template.divisi
+    updates.urutan = template.urutan
+    const rows = db
+      .select()
+      .from(anggota)
+      .all()
+      .map((item) => ({
+        id: item.id,
+        role: item.id === id ? nextRole : item.role,
+      }))
+    updates.parentId = resolveParentId(nextRole, rows)
   }
 
   // Jika ada foto baru, hapus foto lama dan simpan yang baru
@@ -186,6 +170,23 @@ strukturRoutes.put('/:id', authMiddleware, async (c) => {
     .get()
 
   return c.json({ success: true, data: updated })
+})
+
+// GET /struktur/template — daftar role tetap sesuai bagan organisasi
+strukturRoutes.get('/template', (c) => {
+  return c.json({ success: true, data: STRUKTUR_TEMPLATE })
+})
+
+// POST /struktur/reset [AUTH] — hapus seluruh anggota
+strukturRoutes.post('/reset', authMiddleware, async (c) => {
+  const rows = db.select().from(anggota).all()
+  for (const row of rows) {
+    if (row.photo) {
+      await deleteFile(row.photo)
+    }
+  }
+  db.delete(anggota).run()
+  return c.json({ success: true, message: 'Semua data struktur berhasil dihapus' })
 })
 
 // DELETE /struktur/:id [AUTH]

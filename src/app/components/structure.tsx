@@ -15,42 +15,88 @@ type TeamMember = {
   urutan: number | null;
 };
 
-type TreeMember = TeamMember & { children: TreeMember[] };
+type TemplateNode = {
+  role: string;
+  parentRole: string | null;
+  urutan: number;
+  divisi: string | null;
+};
 
-function buildTree(members: TeamMember[]): TreeMember[] {
-  const map = new Map<number, TreeMember>();
-  const sorted = [...members].sort((a, b) => (a.urutan ?? Number.MAX_SAFE_INTEGER) - (b.urutan ?? Number.MAX_SAFE_INTEGER) || a.id - b.id);
+type TreeNode = TeamMember & { children: TreeNode[] };
 
-  for (const member of sorted) {
-    map.set(member.id, { ...member, children: [] });
+function normalizeRole(role: string): string {
+  return role.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function buildTreeFromTemplate(members: TeamMember[], template: TemplateNode[]): TreeNode[] {
+  const memberByRole = new Map<string, TeamMember[]>();
+  for (const member of members) {
+    const key = normalizeRole(member.role);
+    const list = memberByRole.get(key) ?? [];
+    list.push(member);
+    memberByRole.set(key, list);
   }
 
-  const roots: TreeMember[] = [];
-  for (const member of sorted) {
-    const node = map.get(member.id);
+  const nodeByRole = new Map<string, TreeNode>();
+  const roots: TreeNode[] = [];
+
+  for (const item of template) {
+    const key = normalizeRole(item.role);
+    const firstMember = (memberByRole.get(key) ?? [])[0];
+    const fallbackIdSeed = Math.abs(
+      Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0),
+    );
+
+    nodeByRole.set(key, {
+      id: firstMember?.id ?? 100000 + fallbackIdSeed,
+      nama: firstMember?.nama ?? "Belum diisi",
+      role: item.role,
+      divisi: item.divisi,
+      parentId: null,
+      photo: firstMember?.photo ?? null,
+      urutan: item.urutan,
+      children: [],
+    });
+  }
+
+  for (const item of template) {
+    const key = normalizeRole(item.role);
+    const node = nodeByRole.get(key);
     if (!node) continue;
-    if (member.parentId && map.has(member.parentId)) {
-      map.get(member.parentId)!.children.push(node);
+    if (!item.parentRole) {
+      roots.push(node);
+      continue;
+    }
+    const parent = nodeByRole.get(normalizeRole(item.parentRole));
+    if (parent) {
+      parent.children.push(node);
     } else {
       roots.push(node);
     }
   }
+
+  const sortDeep = (nodes: TreeNode[]) => {
+    nodes.sort((a, b) => (a.urutan ?? Number.MAX_SAFE_INTEGER) - (b.urutan ?? Number.MAX_SAFE_INTEGER));
+    nodes.forEach((node) => sortDeep(node.children));
+  };
+  sortDeep(roots);
   return roots;
 }
 
-function MemberCard({ member, depth }: { member: TreeMember; depth: number }) {
-  const photo = toAbsoluteApiUrl(member.photo);
-  const initial = member.nama
+function NodeCard({ node, depth }: { node: TreeNode; depth: number }) {
+  const photo = toAbsoluteApiUrl(node.photo);
+  const initial = node.nama
     .split(" ")
-    .map((name) => name[0])
+    .map((part) => part[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
+  const isEmpty = node.nama === "Belum diisi";
 
   return (
     <div className="relative">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.45, ease }}
@@ -61,27 +107,27 @@ function MemberCard({ member, depth }: { member: TreeMember; depth: number }) {
         }}
       >
         <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 border" style={{ borderColor: "rgba(62, 207, 178, 0.28)" }}>
-            <AvatarImage src={photo ?? undefined} alt={member.nama} />
-            <AvatarFallback style={{ background: "rgba(62, 207, 178, 0.12)", color: "#61eccd", fontWeight: 600 }}>
-              {initial}
+          <Avatar className="h-12 w-12 border" style={{ borderColor: "rgba(62, 207, 178, 0.25)" }}>
+            <AvatarImage src={photo ?? undefined} alt={node.nama} />
+            <AvatarFallback style={{ background: "rgba(62, 207, 178, 0.1)", color: "#61eccd", fontWeight: 600 }}>
+              {initial || "?"}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="truncate font-semibold" style={{ color: "#e3e2e3", fontFamily: "Space Grotesk, sans-serif" }}>
-              {member.nama}
+            <p className="truncate text-sm font-semibold" style={{ color: "#e3e2e3", fontFamily: "Space Grotesk, sans-serif" }}>
+              {node.role}
             </p>
-            <p className="truncate text-xs" style={{ color: "#bbcac4", fontFamily: "JetBrains Mono, monospace" }}>
-              {member.role}
+            <p className="truncate text-xs" style={{ color: isEmpty ? "rgba(227,226,227,0.42)" : "#bbcac4", fontFamily: "JetBrains Mono, monospace" }}>
+              {node.nama}
             </p>
           </div>
         </div>
       </motion.div>
 
-      {member.children.length > 0 && (
+      {node.children.length > 0 && (
         <div className="mt-5 space-y-4 pl-6" style={{ borderLeft: "1px solid rgba(62, 207, 178, 0.25)" }}>
-          {member.children.map((child) => (
-            <MemberCard key={child.id} member={child} depth={depth + 1} />
+          {node.children.map((child) => (
+            <NodeCard key={`${child.role}-${depth + 1}`} node={child} depth={depth + 1} />
           ))}
         </div>
       )}
@@ -91,25 +137,28 @@ function MemberCard({ member, depth }: { member: TreeMember; depth: number }) {
 
 export function Structure() {
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [template, setTemplate] = useState<TemplateNode[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchMembers() {
+    async function fetchData() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: TeamMember[] }>("/struktur");
-        if (res.success && res.data) {
-          setMembers(res.data);
-        }
+        const [resMembers, resTemplate] = await Promise.all([
+          apiRequest<{ success: boolean; data?: TeamMember[] }>("/struktur"),
+          apiRequest<{ success: boolean; data?: TemplateNode[] }>("/struktur/template"),
+        ]);
+        if (resMembers.success && resMembers.data) setMembers(resMembers.data);
+        if (resTemplate.success && resTemplate.data) setTemplate(resTemplate.data);
       } catch (error) {
         console.error("Failed to fetch structure:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchMembers();
+    fetchData();
   }, []);
 
-  const tree = useMemo(() => buildTree(members), [members]);
+  const tree = useMemo(() => buildTreeFromTemplate(members, template), [members, template]);
 
   return (
     <section id="struktur" className="px-6 py-14" style={{ background: "rgba(27, 28, 29, 0.3)" }}>
@@ -140,12 +189,12 @@ export function Structure() {
           ) : tree.length > 0 ? (
             <div className="space-y-6">
               {tree.map((root) => (
-                <MemberCard key={root.id} member={root} depth={0} />
+                <NodeCard key={root.role} node={root} depth={0} />
               ))}
             </div>
           ) : (
             <p className="text-center text-sm" style={{ color: "#bbcac4", fontFamily: "JetBrains Mono, monospace" }}>
-              Data struktur organisasi belum tersedia.
+              Template struktur belum tersedia.
             </p>
           )}
         </motion.div>
