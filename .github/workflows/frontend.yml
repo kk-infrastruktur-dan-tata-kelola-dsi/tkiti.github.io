@@ -3,20 +3,37 @@ name: Deploy Frontend to GitHub Pages
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'backend/**'
-      - '.github/**'
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -38,9 +55,19 @@ jobs:
         env:
           VITE_API_URL: https://api.tkiti.tech
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist
-          cname: tkiti.tech
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
