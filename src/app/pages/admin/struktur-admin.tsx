@@ -148,10 +148,10 @@ export function AdminStruktur() {
       {/* Filter */}
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList className="bg-gray-100">
-          <TabsTrigger value="all" className="text-gray-600 data-[state=active]:text-gray-900">Semua</TabsTrigger>
-          <TabsTrigger value="kepemimpinan" className="text-gray-600 data-[state=active]:text-gray-900">Kepemimpinan</TabsTrigger>
-          <TabsTrigger value="anggota" className="text-gray-600 data-[state=active]:text-gray-900">Anggota</TabsTrigger>
-          <TabsTrigger value="kolaborasi" className="text-gray-600 data-[state=active]:text-gray-900">Kolaborasi</TabsTrigger>
+          <TabsTrigger value="all">Semua</TabsTrigger>
+          <TabsTrigger value="kepemimpinan">Kepemimpinan</TabsTrigger>
+          <TabsTrigger value="anggota">Anggota</TabsTrigger>
+          <TabsTrigger value="kolaborasi">Kolaborasi</TabsTrigger>
         </TabsList>
       </Tabs>
 

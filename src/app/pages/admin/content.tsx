@@ -130,7 +130,7 @@ export function AdminContent() {
       <Tabs defaultValue="hero">
         <TabsList className="bg-gray-100">
           {SECTIONS.map((s) => (
-            <TabsTrigger key={s.key} value={s.key} className="text-gray-600 data-[state=active]:text-gray-900">
+            <TabsTrigger key={s.key} value={s.key}>
               {s.label}
             </TabsTrigger>
           ))}
