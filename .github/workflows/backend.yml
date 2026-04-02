@@ -49,6 +49,22 @@ jobs:
         working-directory: /www/wwwroot/tkiti-web-profile/backend
         run: docker compose up -d --remove-orphans
 
+      - name: Seed admin user (first deploy only)
+        working-directory: /www/wwwroot/tkiti-web-profile/backend
+        env:
+          SEED_USERNAME: admin
+          SEED_PASSWORD: admin123
+          SEED_OVERWRITE: "false"
+        run: |
+          if [ ! -f ./data/.admin-seeded ]; then
+            echo "First deploy detected. Running admin seed..."
+            docker compose exec -T api node dist/seed.js
+            mkdir -p ./data
+            touch ./data/.admin-seeded
+          else
+            echo "Admin seed already executed. Skipping."
+          fi
+
       - name: Clean up old Docker images
         run: docker image prune -f
 
