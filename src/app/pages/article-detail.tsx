@@ -184,7 +184,7 @@ export function ArticleDetail() {
         {/* Author Info */}
         <div className="flex items-center gap-3 mb-6">
           <Avatar className="w-10 h-10 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-            <AvatarImage src={authorAvatar || undefined} alt={authorName} />
+            <AvatarImage src={authorAvatar || undefined} alt={authorName} crossOrigin="anonymous" />
             <AvatarFallback
               style={{
                 background: "rgba(62, 207, 178, 0.1)",

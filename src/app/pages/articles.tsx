@@ -132,7 +132,7 @@ function ArticleCard({ article }: { article: Article }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="w-8 h-8 border" style={{ borderColor: "rgba(62, 207, 178, 0.2)" }}>
-                <AvatarImage src={authorAvatar || undefined} alt={authorName} />
+                <AvatarImage src={authorAvatar || undefined} alt={authorName} crossOrigin="anonymous" />
                 <AvatarFallback
                   style={{
                     background: "rgba(62, 207, 178, 0.1)",
