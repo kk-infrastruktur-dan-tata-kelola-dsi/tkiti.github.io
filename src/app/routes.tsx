@@ -13,6 +13,10 @@ import { AdminArticleEditor } from "./pages/admin/articles-editor";
 import { AdminGallery } from "./pages/admin/gallery-admin";
 import { AdminStruktur } from "./pages/admin/struktur-admin";
 
+const isGitHubPagesHost = window.location.hostname.endsWith("github.io");
+const repoSegment = window.location.pathname.split("/")[1];
+const basename = isGitHubPagesHost && repoSegment ? `/${repoSegment}` : "/";
+
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div 
@@ -59,36 +63,39 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout><Home /></Layout>,
-  },
-  {
-    path: "/article",
-    element: <Layout><Articles /></Layout>,
-  },
-  {
-    path: "/article/:slug",
-    element: <Layout><ArticleDetail /></Layout>,
-  },
+export const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout><Home /></Layout>,
+    },
+    {
+      path: "/article",
+      element: <Layout><Articles /></Layout>,
+    },
+    {
+      path: "/article/:slug",
+      element: <Layout><ArticleDetail /></Layout>,
+    },
 
-  // ─── Admin routes (layout & theme terpisah dari landing page) ───────────────
-  {
-    path: "/admin/login",
-    element: <AdminLogin />,
-  },
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: "content", element: <AdminContent /> },
-      { path: "articles", element: <AdminArticles /> },
-      { path: "articles/new", element: <AdminArticleEditor /> },
-      { path: "articles/:id", element: <AdminArticleEditor /> },
-      { path: "gallery", element: <AdminGallery /> },
-      { path: "struktur", element: <AdminStruktur /> },
-    ],
-  },
-]);
+    // ─── Admin routes (layout & theme terpisah dari landing page) ───────────────
+    {
+      path: "/admin/login",
+      element: <AdminLogin />,
+    },
+    {
+      path: "/admin",
+      element: <AdminLayout />,
+      children: [
+        { index: true, element: <AdminDashboard /> },
+        { path: "content", element: <AdminContent /> },
+        { path: "articles", element: <AdminArticles /> },
+        { path: "articles/new", element: <AdminArticleEditor /> },
+        { path: "articles/:id", element: <AdminArticleEditor /> },
+        { path: "gallery", element: <AdminGallery /> },
+        { path: "struktur", element: <AdminStruktur /> },
+      ],
+    },
+  ],
+  { basename }
+);
