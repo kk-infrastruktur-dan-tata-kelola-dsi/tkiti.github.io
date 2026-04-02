@@ -16,8 +16,18 @@ export const anggota = sqliteTable('anggota', {
   role: text('role').notNull(),
   divisi: text('divisi'),   // 'kepemimpinan' | 'anggota' | 'kolaborasi'
   photo: text('photo'),     // path relatif dari /uploads/
+  periodeId: integer('periode_id'),
   parentId: integer('parent_id'),
   urutan: integer('urutan'),
+})
+
+export const strukturPeriode = sqliteTable('struktur_periode', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nama: text('nama').notNull(),
+  mulai: text('mulai'),
+  selesai: text('selesai'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
 })
 
 // ─── gallery ──────────────────────────────────────────────────────────────────
@@ -60,6 +70,9 @@ export type NewContent = typeof content.$inferInsert
 
 export type Anggota = typeof anggota.$inferSelect
 export type NewAnggota = typeof anggota.$inferInsert
+
+export type StrukturPeriode = typeof strukturPeriode.$inferSelect
+export type NewStrukturPeriode = typeof strukturPeriode.$inferInsert
 
 export type Gallery = typeof gallery.$inferSelect
 export type NewGallery = typeof gallery.$inferInsert

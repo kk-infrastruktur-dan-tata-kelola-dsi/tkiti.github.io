@@ -33,8 +33,18 @@ sqlite.exec(`
     role text NOT NULL,
     divisi text,
     photo text,
+    periode_id integer,
     parent_id integer,
     urutan integer
+  );
+
+  CREATE TABLE IF NOT EXISTS struktur_periode (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    nama text NOT NULL,
+    mulai text,
+    selesai text,
+    is_active integer DEFAULT 0,
+    created_at integer
   );
 
   CREATE TABLE IF NOT EXISTS gallery (
@@ -69,6 +79,22 @@ sqlite.exec(`
 `)
 
 const anggotaColumns = sqlite.prepare(`PRAGMA table_info(anggota)`).all() as Array<{ name: string }>
+const periodeColumns = sqlite.prepare(`PRAGMA table_info(struktur_periode)`).all() as Array<{ name: string }>
+if (periodeColumns.length === 0) {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS struktur_periode (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      nama text NOT NULL,
+      mulai text,
+      selesai text,
+      is_active integer DEFAULT 0,
+      created_at integer
+    );
+  `)
+}
+if (!anggotaColumns.some((col) => col.name === 'periode_id')) {
+  sqlite.exec(`ALTER TABLE anggota ADD COLUMN periode_id integer;`)
+}
 if (!anggotaColumns.some((col) => col.name === 'parent_id')) {
   sqlite.exec(`ALTER TABLE anggota ADD COLUMN parent_id integer;`)
 }

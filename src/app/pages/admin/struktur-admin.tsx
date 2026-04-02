@@ -32,6 +32,7 @@ type Anggota = {
   role: string
   divisi: string | null
   parentId: number | null
+  periodeId: number | null
   photo: string | null
   urutan: number | null
 }
@@ -43,43 +44,120 @@ type TemplateNode = {
   divisi: string | null
 }
 
-type FormState = {
+type Periode = {
+  id: number
   nama: string
-  role: string
+  mulai: string | null
+  selesai: string | null
+  isActive: boolean
 }
 
+type FormState = { nama: string; role: string }
 const EMPTY_FORM: FormState = { nama: '', role: '' }
+
+type PeriodeForm = { nama: string; mulai: string; selesai: string }
+const EMPTY_PERIODE_FORM: PeriodeForm = { nama: '', mulai: '', selesai: '' }
 
 export function AdminStruktur() {
   const [items, setItems] = useState<Anggota[]>([])
   const [template, setTemplate] = useState<TemplateNode[]>([])
+  const [periodes, setPeriodes] = useState<Periode[]>([])
+  const [selectedPeriodeId, setSelectedPeriodeId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [resetting, setResetting] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [periodeDialogOpen, setPeriodeDialogOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [periodeForm, setPeriodeForm] = useState<PeriodeForm>(EMPTY_PERIODE_FORM)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [saving, setSaving] = useState(false)
+  const [creatingPeriode, setCreatingPeriode] = useState(false)
+  const [activatingPeriodeId, setActivatingPeriodeId] = useState<number | null>(null)
+  const [resetting, setResetting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const activePeriode = useMemo(() => periodes.find((p) => p.isActive) ?? null, [periodes])
+  const effectivePeriodeId = selectedPeriodeId ?? activePeriode?.id ?? null
   const roleOptions = useMemo(() => template.map((node) => node.role), [template])
 
-  async function fetchData() {
-    const [resItems, resTemplate] = await Promise.all([
-      apiRequest<Anggota[]>('/struktur'),
+  async function fetchData(targetPeriodeId?: number | null) {
+    const [resPeriode, resTemplate] = await Promise.all([
+      apiRequest<Periode[]>('/struktur/periode'),
       apiRequest<TemplateNode[]>('/struktur/template'),
     ])
-    if (resItems.success && resItems.data) setItems(resItems.data)
+
+    let periodeList: Periode[] = []
+    if (resPeriode.success && resPeriode.data) {
+      periodeList = resPeriode.data
+      setPeriodes(periodeList)
+    }
     if (resTemplate.success && resTemplate.data) setTemplate(resTemplate.data)
+
+    const active = periodeList.find((p) => p.isActive) ?? null
+    const finalPeriodeId = targetPeriodeId ?? selectedPeriodeId ?? active?.id ?? null
+    if (finalPeriodeId !== null) {
+      const resItems = await apiRequest<Anggota[]>(`/struktur?periodeId=${finalPeriodeId}`)
+      if (resItems.success && resItems.data) setItems(resItems.data)
+      setSelectedPeriodeId(finalPeriodeId)
+    } else {
+      setItems([])
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchData()
+    fetchData(null)
   }, [])
 
+  async function changePeriode(id: number) {
+    setSelectedPeriodeId(id)
+    const resItems = await apiRequest<Anggota[]>(`/struktur?periodeId=${id}`)
+    if (resItems.success && resItems.data) setItems(resItems.data)
+  }
+
+  async function createPeriode() {
+    if (!periodeForm.nama.trim()) {
+      toast.error('Nama periode wajib diisi')
+      return
+    }
+    setCreatingPeriode(true)
+    const res = await apiRequest<Periode>('/struktur/periode', {
+      method: 'POST',
+      body: JSON.stringify({
+        nama: periodeForm.nama.trim(),
+        mulai: periodeForm.mulai || null,
+        selesai: periodeForm.selesai || null,
+      }),
+    })
+    if (res.success && res.data) {
+      toast.success('Periode berhasil dibuat')
+      setPeriodeDialogOpen(false)
+      setPeriodeForm(EMPTY_PERIODE_FORM)
+      await fetchData(res.data.id)
+    } else {
+      toast.error(res.error ?? 'Gagal membuat periode')
+    }
+    setCreatingPeriode(false)
+  }
+
+  async function activatePeriode(id: number) {
+    setActivatingPeriodeId(id)
+    const res = await apiRequest(`/struktur/periode/${id}/activate`, { method: 'PUT' })
+    if (res.success) {
+      toast.success('Periode aktif berhasil diubah')
+      await fetchData(id)
+    } else {
+      toast.error(res.error ?? 'Gagal mengaktifkan periode')
+    }
+    setActivatingPeriodeId(null)
+  }
+
   function openNew() {
+    if (!effectivePeriodeId) {
+      toast.error('Buat periode terlebih dahulu')
+      return
+    }
     setEditId(null)
     setForm(EMPTY_FORM)
     setPhotoFile(null)
@@ -103,6 +181,10 @@ export function AdminStruktur() {
   }
 
   async function handleSave() {
+    if (!effectivePeriodeId) {
+      toast.error('Periode tidak valid')
+      return
+    }
     if (!form.nama.trim() || !form.role.trim()) {
       toast.error('Nama dan role wajib diisi')
       return
@@ -116,6 +198,7 @@ export function AdminStruktur() {
     const fd = new FormData()
     fd.append('nama', form.nama.trim())
     fd.append('role', form.role.trim())
+    fd.append('periodeId', String(effectivePeriodeId))
     if (photoFile) fd.append('photo', photoFile)
 
     const url = editId ? `/struktur/${editId}` : '/struktur'
@@ -125,7 +208,7 @@ export function AdminStruktur() {
     if (res.success) {
       toast.success(editId ? 'Anggota diperbarui' : 'Anggota ditambahkan')
       setDialogOpen(false)
-      await fetchData()
+      await fetchData(effectivePeriodeId)
     } else {
       toast.error(res.error ?? 'Gagal menyimpan')
     }
@@ -147,45 +230,48 @@ export function AdminStruktur() {
     }
   }
 
-  async function handleReset() {
+  async function handleResetPeriode() {
+    if (!effectivePeriodeId) return
     setResetting(true)
-    const res = await apiRequest('/struktur/reset', { method: 'POST' })
+    const res = await apiRequest('/struktur/reset', {
+      method: 'POST',
+      body: JSON.stringify({ periodeId: effectivePeriodeId }),
+    })
     if (res.success) {
-      toast.success('Semua struktur berhasil dihapus')
-      await fetchData()
+      toast.success('Data struktur periode berhasil dihapus')
+      await fetchData(effectivePeriodeId)
     } else {
-      toast.error(res.error ?? 'Gagal reset struktur')
+      toast.error(res.error ?? 'Gagal reset struktur periode')
     }
     setResetting(false)
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Struktur Organisasi (Template Tetap)</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Role mengikuti template organisasi. Tidak ada drag-drop & tidak ada input priority manual.
-          </p>
+          <h1 className="text-xl font-semibold text-gray-900">Struktur Organisasi (Periode)</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Pilih periode, atur mana yang aktif, lalu isi nama per role template.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setPeriodeDialogOpen(true)}>
+            + Buat Periode
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="text-red-600" disabled={resetting}>
-                {resetting ? 'Resetting...' : 'Reset Semua Struktur'}
+              <Button variant="outline" className="text-red-600" disabled={resetting || !effectivePeriodeId}>
+                {resetting ? 'Resetting...' : 'Reset Struktur Periode Ini'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Hapus semua data struktur?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Semua anggota pada struktur organisasi akan dihapus dari database.
-                </AlertDialogDescription>
+                <AlertDialogTitle>Hapus struktur untuk periode ini?</AlertDialogTitle>
+                <AlertDialogDescription>Data anggota pada periode terpilih akan dihapus.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
-                <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleReset}>
-                  Hapus Semua
+                <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleResetPeriode}>
+                  Hapus
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -193,6 +279,38 @@ export function AdminStruktur() {
           <Button className="gap-2" onClick={openNew}>
             <Plus className="h-4 w-4" /> Tambah Anggota
           </Button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="mb-3 text-sm font-semibold text-gray-700">Daftar Periode</h2>
+        <div className="space-y-2">
+          {periodes.length === 0 ? (
+            <p className="text-sm text-gray-400">Belum ada periode.</p>
+          ) : (
+            periodes.map((periode) => (
+              <div key={periode.id} className="flex items-center justify-between rounded border border-gray-100 px-3 py-2">
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => changePeriode(periode.id)}
+                >
+                  <p className="text-sm font-semibold text-gray-900">{periode.nama}</p>
+                  <p className="text-xs text-gray-500">
+                    {periode.mulai ?? '-'} s/d {periode.selesai ?? '-'}
+                  </p>
+                </button>
+                <div className="flex items-center gap-2">
+                  {periode.isActive ? <Badge>Aktif</Badge> : <Badge variant="secondary">Arsip</Badge>}
+                  {!periode.isActive && (
+                    <Button size="sm" variant="outline" disabled={activatingPeriodeId === periode.id} onClick={() => activatePeriode(periode.id)}>
+                      {activatingPeriodeId === periode.id ? 'Mengaktifkan...' : 'Jadikan Aktif'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -209,11 +327,13 @@ export function AdminStruktur() {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Data Anggota ({items.length})</h2>
+        <h2 className="mb-3 text-sm font-semibold text-gray-700">
+          Data Anggota Periode: {periodes.find((p) => p.id === effectivePeriodeId)?.nama ?? '-'} ({items.length})
+        </h2>
         {loading ? (
           <p className="py-6 text-center text-sm text-gray-400">Memuat data...</p>
         ) : items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-400">Belum ada data struktur.</p>
+          <p className="py-6 text-center text-sm text-gray-400">Belum ada data struktur pada periode ini.</p>
         ) : (
           <div className="space-y-2">
             {items.map((item) => (
@@ -262,11 +382,8 @@ export function AdminStruktur() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editId ? 'Edit Anggota' : 'Tambah Anggota'}</DialogTitle>
-            <DialogDescription>
-              Pilih role sesuai template organisasi. Parent dan urutan akan diatur otomatis.
-            </DialogDescription>
+            <DialogDescription>Pilih role dari template. Parent dan urutan ditentukan otomatis.</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-4">
               {photoPreview ? (
@@ -281,12 +398,10 @@ export function AdminStruktur() {
                 <Upload className="h-3.5 w-3.5" /> Upload foto
               </Button>
             </div>
-
             <div className="space-y-1.5">
               <Label>Nama</Label>
               <Input value={form.nama} onChange={(e) => setForm((prev) => ({ ...prev, nama: e.target.value }))} />
             </div>
-
             <div className="space-y-1.5">
               <Label>Role</Label>
               <Input
@@ -302,13 +417,45 @@ export function AdminStruktur() {
               </datalist>
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Batal
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Menyimpan...' : editId ? 'Simpan' : 'Tambah'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={periodeDialogOpen} onOpenChange={setPeriodeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Buat Periode Kepengurusan</DialogTitle>
+            <DialogDescription>Contoh nama: Periode 2024/2025</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Nama Periode</Label>
+              <Input value={periodeForm.nama} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, nama: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>Mulai</Label>
+                <Input type="date" value={periodeForm.mulai} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, mulai: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Selesai</Label>
+                <Input type="date" value={periodeForm.selesai} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, selesai: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPeriodeDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={createPeriode} disabled={creatingPeriode}>
+              {creatingPeriode ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>
