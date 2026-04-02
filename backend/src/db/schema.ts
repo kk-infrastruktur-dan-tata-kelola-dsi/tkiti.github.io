@@ -16,6 +16,7 @@ export const anggota = sqliteTable('anggota', {
   role: text('role').notNull(),
   divisi: text('divisi'),   // 'kepemimpinan' | 'anggota' | 'kolaborasi'
   photo: text('photo'),     // path relatif dari /uploads/
+  parentId: integer('parent_id'),
   urutan: integer('urutan'),
 })
 

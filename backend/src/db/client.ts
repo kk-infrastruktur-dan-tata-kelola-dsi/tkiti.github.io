@@ -33,6 +33,7 @@ sqlite.exec(`
     role text NOT NULL,
     divisi text,
     photo text,
+    parent_id integer,
     urutan integer
   );
 
@@ -66,5 +67,10 @@ sqlite.exec(`
   );
   CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users (username);
 `)
+
+const anggotaColumns = sqlite.prepare(`PRAGMA table_info(anggota)`).all() as Array<{ name: string }>
+if (!anggotaColumns.some((col) => col.name === 'parent_id')) {
+  sqlite.exec(`ALTER TABLE anggota ADD COLUMN parent_id integer;`)
+}
 
 export const db = drizzle(sqlite, { schema })
