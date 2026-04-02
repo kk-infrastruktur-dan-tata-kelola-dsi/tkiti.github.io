@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router'
 import { Toaster } from 'sonner'
+import { Helmet } from 'react-helmet-async'
 import {
   LayoutDashboard,
   FileText,
@@ -202,6 +203,9 @@ export function AdminLayout() {
     // `.dark` class di sini mengaktifkan dark: variant Tailwind v4
     // via @custom-variant dark (&:is(.dark *)).
     <div className={cn('min-h-screen bg-white text-gray-900', isDark && 'dark')}>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+      </Helmet>
       <div className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 min-h-screen">
         <SidebarProvider defaultOpen={true}>
           <AdminSidebar onLogout={handleLogout} />
