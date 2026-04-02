@@ -49,6 +49,40 @@
   --dialog-foreground: #09090b;
 }
 
+.admin-theme {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #09090b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #27272a;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #27272a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: #e4e4e7;
+  --input-background: #ffffff;
+  --input-foreground: #09090b;
+  --input-placeholder: #a1a1aa;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #09090b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #27272a;
+  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --sidebar-ring: #d4d4d8;
+  --dialog-background: #ffffff;
+  --dialog-foreground: #09090b;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

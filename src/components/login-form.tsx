@@ -61,6 +61,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
+            className='bg-white text-gray-900 placeholder:text-gray-400'
             required
           />
         </div>
@@ -75,6 +76,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+            className='bg-white text-gray-900 placeholder:text-gray-400'
             required
           />
         </div>

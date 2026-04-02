@@ -49,9 +49,7 @@ function AdminSidebar({ onLogout }: { onLogout: () => void }) {
       {/* Logo */}
       <SidebarHeader className="h-14 flex items-center px-4 border-b border-gray-200">
         <Link to="/admin" className="flex items-center gap-2.5 min-w-0">
-          <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-zinc-900 flex items-center justify-center">
-            <span className="text-[#3ECFB2] text-xs font-bold font-mono">TK</span>
-          </div>
+          <img src="/images/logo.png" alt="TKITI" className="h-7 w-7 rounded-md object-cover" />
           {!isCollapsed && (
             <span className="font-semibold text-sm text-gray-900 truncate">
               TKITI Admin
@@ -170,8 +168,10 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="admin-theme min-h-screen bg-white text-gray-900">
       <Helmet>
+        <title>TKITI Admin Panel</title>
+        <link rel="icon" type="image/png" href="/images/logo.png" />
         <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
       </Helmet>
       <div className="bg-white text-gray-900 min-h-screen">
