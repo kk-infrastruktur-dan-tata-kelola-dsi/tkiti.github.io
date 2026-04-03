@@ -2,6 +2,14 @@ import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "./ui/dialog";
+import { XIcon } from "lucide-react";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -35,7 +43,15 @@ function formatPeriodeLabel(periode: Periode) {
   return periode.nama;
 }
 
-function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact?: boolean }) {
+function FamilyTreeNode({
+  node,
+  compact = false,
+  onPersonClick,
+}: {
+  node: TeamTreeNode;
+  compact?: boolean;
+  onPersonClick?: (member: TeamMember) => void;
+}) {
   const initials = node.nama
     .split(" ")
     .map((part) => part[0])
@@ -51,10 +67,15 @@ function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.4, ease }}
-        className="z-10 min-w-[170px] max-w-[220px] rounded-xl border px-3 py-2.5"
+        className={`z-10 min-w-[170px] max-w-[220px] rounded-xl border px-3 py-2.5 ${!isEmpty && onPersonClick ? "cursor-pointer hover:brightness-110" : ""}`}
         style={{
           borderColor: "rgba(62, 207, 178, 0.28)",
           background: "rgba(9, 11, 12, 0.85)",
+        }}
+        onClick={() => {
+          if (!isEmpty && onPersonClick) {
+            onPersonClick(node);
+          }
         }}
       >
         <div className="flex items-center gap-3">
@@ -95,7 +116,7 @@ function FamilyTreeNode({ node, compact = false }: { node: TeamTreeNode; compact
             {node.children.map((child, index) => (
               <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
                 <div className="absolute -top-4 h-4 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-                <FamilyTreeNode node={child} compact={compact} />
+                <FamilyTreeNode node={child} compact={compact} onPersonClick={onPersonClick} />
               </li>
             ))}
           </ul>
@@ -110,6 +131,7 @@ export function Structure() {
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPerson, setSelectedPerson] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -150,8 +172,17 @@ export function Structure() {
 
   const compactTree = familyTree.length > 0 && familyTree[0].children.length > 4;
 
+  const personInitials = selectedPerson
+    ? selectedPerson.nama
+        .split(" ")
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "";
+
   return (
-    <section id="struktur" className="px-6 py-14" style={{ background: "rgba(27, 28, 29, 0.3)" }}>
+    <section id="struktur" className="px-6 py-14">
       <div className="mx-auto max-w-6xl">
         <motion.h2
           className="mb-8 text-center tracking-[0.15em]"
@@ -180,12 +211,12 @@ export function Structure() {
               style={{
                 borderColor: "rgba(62, 207, 178, 0.35)",
                 color: "#61eccd",
-                background: "rgba(62, 207, 178, 0.08)",
+                background: "rgba(9, 11, 12, 0.95)",
                 fontFamily: "JetBrains Mono, monospace",
               }}
             >
               {periodes.map((periode) => (
-                <option key={periode.id} value={periode.id}>
+                <option key={periode.id} value={periode.id} style={{ background: "#090b0c", color: "#61eccd" }}>
                   {formatPeriodeLabel(periode)}{periode.isActive ? " [Aktif]" : ""}
                 </option>
               ))}
@@ -214,31 +245,142 @@ export function Structure() {
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, ease }}
-          className="rounded-2xl border p-4 md:p-6"
-          style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
-        >
-          {loading ? (
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease }}
+            className="rounded-2xl border p-4 md:p-6"
+            style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
+          >
             <p className="text-center text-sm" style={{ color: "#bbcac4", fontFamily: "JetBrains Mono, monospace" }}>
               Memuat struktur organisasi...
             </p>
-          ) : familyTree.length > 0 ? (
+          </motion.div>
+        ) : familyTree.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease }}
+            className="rounded-2xl border p-4 md:p-6"
+            style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
+          >
             <ul className="flex justify-center pb-1">
               {familyTree.map((root, index) => (
-                <FamilyTreeNode key={`${root.role}-${index}`} node={root} compact={compactTree} />
+                <FamilyTreeNode key={`${root.role}-${index}`} node={root} compact={compactTree} onPersonClick={setSelectedPerson} />
               ))}
             </ul>
-          ) : (
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease }}
+            className="rounded-2xl border p-4 md:p-6"
+            style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
+          >
             <p className="text-center text-sm" style={{ color: "#bbcac4", fontFamily: "JetBrains Mono, monospace" }}>
               Data struktur belum tersedia pada periode ini.
             </p>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Person Detail Dialog */}
+      <Dialog open={!!selectedPerson} onOpenChange={(open) => { if (!open) setSelectedPerson(null); }}>
+        <DialogContent
+          className="border-0 p-0 sm:max-w-md"
+          style={{
+            background: "rgba(9, 11, 12, 0.97)",
+            backdropFilter: "blur(20px)",
+            borderColor: "rgba(62, 207, 178, 0.2)",
+            boxShadow: "0 0 60px rgba(62, 207, 178, 0.15)",
+          }}
+        >
+          <DialogClose
+            className="absolute top-4 right-4 z-10 rounded-full p-1 transition-colors hover:bg-white/10"
+            style={{ color: "#61eccd" }}
+          >
+            <XIcon className="h-5 w-5" />
+          </DialogClose>
+
+          {selectedPerson && (
+            <>
+              <DialogHeader className="px-6 pt-8 pb-4">
+                <DialogTitle
+                  className="text-center tracking-[0.1em]"
+                  style={{ fontFamily: "JetBrains Mono, monospace", color: "#61eccd" }}
+                >
+                  //PERSONNEL_DETAIL
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="flex flex-col items-center px-6 pb-8 gap-5">
+                <Avatar
+                  className="h-24 w-24 border-2"
+                  style={{ borderColor: "rgba(62, 207, 178, 0.35)" }}
+                >
+                  <AvatarImage
+                    src={toAbsoluteApiUrl(selectedPerson.photo) ?? undefined}
+                    alt={selectedPerson.nama}
+                  />
+                  <AvatarFallback
+                    className="text-2xl"
+                    style={{ background: "rgba(62, 207, 178, 0.12)", color: "#61eccd", fontWeight: 700 }}
+                  >
+                    {personInitials || "?"}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="w-full rounded-xl border px-5 py-4 space-y-3" style={{ borderColor: "rgba(62, 207, 178, 0.2)", background: "rgba(8, 10, 11, 0.6)" }}>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
+                      Nama
+                    </p>
+                    <p className="text-base font-semibold" style={{ color: "#e3e2e3", fontFamily: "Space Grotesk, sans-serif" }}>
+                      {selectedPerson.nama}
+                    </p>
+                  </div>
+
+                  <div
+                    className="h-px w-full"
+                    style={{ background: "rgba(62, 207, 178, 0.15)" }}
+                  />
+
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
+                      Jabatan
+                    </p>
+                    <p className="text-sm font-semibold" style={{ color: "#61eccd", fontFamily: "JetBrains Mono, monospace" }}>
+                      {selectedPerson.role}
+                    </p>
+                  </div>
+
+                  {selectedPerson.divisi && (
+                    <>
+                      <div
+                        className="h-px w-full"
+                        style={{ background: "rgba(62, 207, 178, 0.15)" }}
+                      />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "#8fd8c8", fontFamily: "JetBrains Mono, monospace" }}>
+                          Divisi
+                        </p>
+                        <p className="text-sm" style={{ color: "#bbcac4", fontFamily: "Space Grotesk, sans-serif" }}>
+                          {selectedPerson.divisi}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

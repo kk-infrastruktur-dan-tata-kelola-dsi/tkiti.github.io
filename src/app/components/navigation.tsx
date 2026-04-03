@@ -6,6 +6,7 @@ export function Navigation() {
   const navigate = useNavigate();
   const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
   const [activeSection, setActiveSection] = useState<string>("beranda");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = useMemo(
     () => [
@@ -21,6 +22,7 @@ export function Navigation() {
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
+    setMobileMenuOpen(false);
 
     // If we're already on the home page, just scroll to the section
     if (location.pathname === '/') {
@@ -93,7 +95,7 @@ export function Navigation() {
   }, [location.pathname, navItems]);
 
   return (
-    <nav 
+    <nav
       className="fixed top-0 w-full z-50 border-b"
       style={{
         background: 'rgba(7, 8, 9, 0.6)',
@@ -102,11 +104,12 @@ export function Navigation() {
         boxShadow: '0 0 40px rgba(62, 207, 178, 0.1)',
       }}
     >
-      <div className="flex justify-between items-center px-8 h-20 max-w-full mx-auto">
+      <div className="flex justify-between items-center px-4 md:px-8 h-20 max-w-full mx-auto">
         <a
           href="#beranda"
           onClick={(e) => {
             e.preventDefault();
+            setMobileMenuOpen(false);
             if (location.pathname !== '/') {
               navigate('/');
               setTimeout(() => {
@@ -139,6 +142,36 @@ export function Navigation() {
           />
         </a>
 
+        {/* Mobile menu button */}
+        <button
+          className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span
+            className="block w-6 h-0.5 transition-all duration-300"
+            style={{
+              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              transform: mobileMenuOpen ? 'rotate(45deg) translate(2px, 2px)' : 'none',
+            }}
+          />
+          <span
+            className="block w-6 h-0.5 transition-all duration-300"
+            style={{
+              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              opacity: mobileMenuOpen ? 0 : 1,
+            }}
+          />
+          <span
+            className="block w-6 h-0.5 transition-all duration-300"
+            style={{
+              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              transform: mobileMenuOpen ? 'rotate(-45deg) translate(2px, -2px)' : 'none',
+            }}
+          />
+        </button>
+
+        {/* Desktop nav items */}
         <div className="hidden md:flex items-center gap-3">
           {navItems.slice(1).map((item) => (
             <a
@@ -172,9 +205,9 @@ export function Navigation() {
           </Link>
         </div>
 
-        <button 
+        <button
           onClick={(e) => handleSectionClick(e as any, 'kontak')}
-          className="px-6 py-2 font-bold tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
+          className="hidden md:block px-6 py-2 font-bold tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
           style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: '12px',
@@ -186,6 +219,65 @@ export function Navigation() {
           HUBUNGI KAMI
         </button>
       </div>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden border-t"
+          style={{
+            background: 'rgba(7, 8, 9, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderColor: 'rgba(62, 207, 178, 0.15)',
+          }}
+        >
+          <div className="flex flex-col gap-2 px-4 py-4">
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={(e) => handleSectionClick(e, item.id)}
+                className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-2 text-center"
+                style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '12px',
+                  color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+                  borderColor: activeSection === item.id ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
+                  background: activeSection === item.id ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
+                }}
+              >
+                {item.label}
+              </a>
+            ))}
+            <Link
+              to="/article"
+              onClick={() => setMobileMenuOpen(false)}
+              className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-2 text-center"
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '12px',
+                color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+                borderColor: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
+                background: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
+              }}
+            >
+              Article
+            </Link>
+            <button
+              onClick={(e) => handleSectionClick(e as any, 'kontak')}
+              className="mt-2 px-6 py-2 font-bold tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '12px',
+                background: '#3ECFB2',
+                color: '#00382e',
+                borderRadius: '2px',
+              }}
+            >
+              HUBUNGI KAMI
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
