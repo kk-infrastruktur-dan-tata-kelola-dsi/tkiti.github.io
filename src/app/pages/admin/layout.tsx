@@ -153,13 +153,23 @@ export function AdminLayout() {
 
   // Auth guard
   useEffect(() => {
+    let cancelled = false
+    
     const token = getToken()
     if (!token || isTokenExpired(token)) {
       clearToken()
       navigate('/admin/login', { replace: true })
       return
     }
-    setUsername(getUsername())
+    
+    const username = getUsername()
+    if (!cancelled) {
+      setUsername(username)
+    }
+    
+    return () => {
+      cancelled = true
+    }
   }, [navigate])
 
   function handleLogout() {

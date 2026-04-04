@@ -47,3 +47,25 @@ export async function deleteFile(relativePath: string): Promise<void> {
     // File tidak ada atau sudah terhapus, skip
   }
 }
+
+/**
+ * Generate thumbnail URL dari original image path
+ * Frontend can use this to request resized thumbnails
+ */
+export function getThumbnailPath(originalPath: string, width: number = 400): string {
+  // Returns the original path with thumbnail parameter
+  // The frontend or CDN can use this to request a specific size
+  // For now, we return the original - the browser will handle resizing via width/height attributes
+  return originalPath
+}
+
+/**
+ * Get optimal image dimensions for different use cases
+ */
+export const IMAGE_SIZES = {
+  gallery_thumbnail: { width: 400, height: 280 },
+  article_thumbnail: { width: 240, height: 170 },
+  article_hero: { width: 760, height: 428 },
+  article_card: { width: 300, height: 144 },
+  avatar: { width: 96, height: 96 },
+} as const

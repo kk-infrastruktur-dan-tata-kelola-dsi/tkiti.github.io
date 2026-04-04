@@ -12,39 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { SEO } from "../components/seo";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import { calculateReadingTime, formatDate, type Article } from "../lib/utils";
 
 import "highlight.js/styles/atom-one-dark.css";
-
-type Article = {
-  id: string | number;
-  slug: string;
-  title: string;
-  subtitle?: string | null;
-  excerpt?: string | null;
-  content: string;
-  category?: string | null;
-  thumbnail_url?: string | null;
-  thumbnail?: string | null;
-  author_name?: string;
-  author?: string | null;
-  author_avatar?: string | null;
-  published_at?: string;
-  createdAt?: string | null;
-  likes: number;
-};
-
-function calculateReadingTime(content: string): number {
-  const words = content.trim().split(/\s+/).length;
-  return Math.ceil(words / 200);
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 export function ArticleDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -245,6 +215,11 @@ export function ArticleDetail() {
               style={{
                 aspectRatio: "16/9",
               }}
+              loading="eager"
+              decoding="sync"
+              sizes="100vw"
+              width="760"
+              height="428"
             />
           </div>
         )}
@@ -354,6 +329,8 @@ export function ArticleDetail() {
                     src={toAbsoluteApiUrl((props.src as string) ?? null) ?? (props.src as string)}
                     alt={props.alt as string}
                     className="w-full h-auto rounded-lg"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, 760px"
                   />
                   {props.alt && (
                     <figcaption
@@ -456,7 +433,8 @@ function MoreArticles({ currentSlug }: { currentSlug: string }) {
   useEffect(() => {
     async function fetch() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: Article[] }>("/articles");
+        // Fetch only 4 articles (we need 3 after filtering current one)
+        const res = await apiRequest<{ success: boolean; data?: Article[] }>("/articles?limit=4");
         if (res.success && res.data) {
           setArticles(res.data.filter((a) => a.slug !== currentSlug).slice(0, 3));
         }
@@ -504,6 +482,9 @@ function MoreArticles({ currentSlug }: { currentSlug: string }) {
                     src={thumb}
                     alt={a.title}
                     className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-500"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    width="300"
+                    height="144"
                   />
                 </div>
               )}

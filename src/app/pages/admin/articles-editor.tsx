@@ -73,26 +73,22 @@ export function AdminArticleEditor() {
   // Load artikel untuk mode edit
   useEffect(() => {
     if (isNew) return
-    apiRequest<ArticleForm & { id: number }>(`/articles/all`)
+    apiRequest<ArticleForm & { id: number }>(`/articles/by-id/${id}`)
       .then((res) => {
         if (!res.success || !res.data) return
-        // /articles/all returns array, find by id
-        const arr = res.data as unknown as (ArticleForm & { id: number })[]
-        const article = arr.find((a) => a.id === Number(id))
-        if (article) {
-          setForm({
-            title: article.title,
-            slug: article.slug,
-            excerpt: article.excerpt ?? '',
-            author: article.author ?? '',
-            content: article.content,
-            thumbnail: article.thumbnail ?? '',
-            published: article.published,
-          })
-          if (article.thumbnail) setThumbnailPreview(article.thumbnail)
-          setThumbnailFile(null)
-          setSlugManual(true)
-        }
+        const article = res.data as unknown as ArticleForm & { id: number }
+        setForm({
+          title: article.title,
+          slug: article.slug,
+          excerpt: article.excerpt ?? '',
+          author: article.author ?? '',
+          content: article.content,
+          thumbnail: article.thumbnail ?? '',
+          published: article.published,
+        })
+        if (article.thumbnail) setThumbnailPreview(article.thumbnail)
+        setThumbnailFile(null)
+        setSlugManual(true)
       })
       .finally(() => setLoading(false))
   }, [id, isNew])

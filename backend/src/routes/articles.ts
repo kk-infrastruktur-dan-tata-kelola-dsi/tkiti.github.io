@@ -11,6 +11,55 @@ export const articleRoutes = new Hono()
 // key: "<ip>:<articleId>", value: timestamp terakhir like
 const likeMap = new Map<string, number>()
 const LIKE_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 jam
+const LIKE_MAP_CLEANUP_INTERVAL = 60 * 60 * 1000 // 1 jam
+const LIKE_MAP_MAX_SIZE = 10000 // Maximum entries before forced cleanup
+
+// Auto-cleanup untuk menghapus expired entries dari memory
+const likeMapCleanupInterval = setInterval(() => {
+  const now = Date.now()
+  let deleted = 0
+  
+  for (const [key, timestamp] of likeMap.entries()) {
+    if (now - timestamp >= LIKE_COOLDOWN_MS) {
+      likeMap.delete(key)
+      deleted++
+    }
+  }
+  
+  if (deleted > 0) {
+    console.log(`[LikeMap] Cleaned up ${deleted} expired entries. Remaining: ${likeMap.size}`)
+  }
+}, LIKE_MAP_CLEANUP_INTERVAL)
+
+// Prevent cleanup from keeping process alive
+if (typeof likeMapCleanupInterval.unref === 'function') {
+  (likeMapCleanupInterval as NodeJS.Timeout).unref()
+}
+
+function cleanupLikeMapIfNeeded(): void {
+  // Force cleanup if map exceeds max size
+  if (likeMap.size >= LIKE_MAP_MAX_SIZE) {
+    const now = Date.now()
+    let deleted = 0
+    
+    for (const [key, timestamp] of likeMap.entries()) {
+      if (now - timestamp >= LIKE_COOLDOWN_MS) {
+        likeMap.delete(key)
+        deleted++
+      }
+    }
+    
+    // If still too large after cleaning expired, remove oldest entries
+    if (likeMap.size >= LIKE_MAP_MAX_SIZE) {
+      const sortedEntries = Array.from(likeMap.entries()).sort((a, b) => a[1] - b[1])
+      const toDelete = sortedEntries.slice(0, Math.floor(LIKE_MAP_MAX_SIZE / 2))
+      for (const [key] of toDelete) {
+        likeMap.delete(key)
+      }
+      console.log(`[LikeMap] Force cleanup: removed ${toDelete.length + deleted} entries`)
+    }
+  }
+}
 
 function getClientIp(c: { req: { header: (name: string) => string | undefined } }): string {
   return (
@@ -22,12 +71,35 @@ function getClientIp(c: { req: { header: (name: string) => string | undefined } 
 
 // GET /articles — published only, sort by createdAt desc
 articleRoutes.get('/', (c) => {
-  const rows = db
-    .select()
+  const limit = c.req.query('limit')
+  const limitNum = limit ? parseInt(limit, 10) : undefined
+  
+  // Only select necessary columns for listing (exclude full content)
+  let query = db
+    .select({
+      id: articles.id,
+      slug: articles.slug,
+      title: articles.title,
+      subtitle: articles.excerpt,
+      excerpt: articles.excerpt,
+      category: articles.author,
+      thumbnail_url: articles.thumbnail,
+      thumbnail: articles.thumbnail,
+      author_name: articles.author,
+      author: articles.author,
+      published_at: articles.createdAt,
+      createdAt: articles.createdAt,
+      likes: articles.likes,
+    })
     .from(articles)
     .where(eq(articles.published, true))
     .orderBy(desc(articles.createdAt))
-    .all()
+  
+  if (limitNum && !isNaN(limitNum) && limitNum > 0) {
+    query = query.limit(limitNum)
+  }
+  
+  const rows = query.all()
 
   return c.json({ success: true, data: rows })
 })
@@ -37,6 +109,17 @@ articleRoutes.get('/', (c) => {
 articleRoutes.get('/all', authMiddleware, (c) => {
   const rows = db.select().from(articles).orderBy(desc(articles.createdAt)).all()
   return c.json({ success: true, data: rows })
+})
+
+// GET /articles/by-id/:id — ambil satu artikel berdasarkan ID [AUTH]
+articleRoutes.get('/by-id/:id', authMiddleware, (c) => {
+  const id = Number(c.req.param('id'))
+  if (isNaN(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
+  
+  const article = db.select().from(articles).where(eq(articles.id, id)).get()
+  if (!article) return c.json({ success: false, error: 'Artikel tidak ditemukan' }, 404)
+  
+  return c.json({ success: true, data: article })
 })
 
 // POST /articles/upload-thumbnail [AUTH]
@@ -103,6 +186,7 @@ articleRoutes.post('/:id/like', (c) => {
   }
 
   likeMap.set(rateKey, now)
+  cleanupLikeMapIfNeeded()
 
   const updated = db
     .update(articles)
@@ -200,7 +284,7 @@ articleRoutes.put('/:id', authMiddleware, async (c) => {
 })
 
 // DELETE /articles/:id [AUTH]
-articleRoutes.delete('/:id', authMiddleware, (c) => {
+articleRoutes.delete('/:id', authMiddleware, async (c) => {
   const id = Number(c.req.param('id'))
   if (isNaN(id)) return c.json({ success: false, error: 'ID tidak valid' }, 400)
 
@@ -209,8 +293,10 @@ articleRoutes.delete('/:id', authMiddleware, (c) => {
 
   const thumbnailPath = db.select({ thumbnail: articles.thumbnail }).from(articles).where(eq(articles.id, id)).get()?.thumbnail
   db.delete(articles).where(eq(articles.id, id)).run()
+  
+  // Await file deletion to prevent orphaned files
   if (thumbnailPath?.startsWith('uploads/')) {
-    void deleteFile(thumbnailPath)
+    await deleteFile(thumbnailPath)
   }
 
   return c.json({ success: true, message: 'Artikel berhasil dihapus' })

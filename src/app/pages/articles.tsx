@@ -7,37 +7,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { SEO } from "../components/seo";
 import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
-
-type Article = {
-  id: string | number;
-  slug: string;
-  title: string;
-  subtitle?: string | null;
-  excerpt?: string | null;
-  content: string;
-  category?: string | null;
-  thumbnail_url?: string | null;
-  thumbnail?: string | null;
-  author_name?: string;
-  author?: string | null;
-  author_avatar?: string | null;
-  published_at?: string;
-  createdAt?: string | null;
-  likes: number;
-};
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function calculateReadingTime(content: string): number {
-  const words = content.trim().split(/\s+/).length;
-  return Math.ceil(words / 220);
-}
+import { calculateReadingTime, formatDate, type Article } from "../lib/utils";
 
 function ArticleListItem({ article }: { article: Article }) {
   const authorName = article.author_name ?? article.author ?? "Admin TKITI";
@@ -75,7 +45,7 @@ function ArticleListItem({ article }: { article: Article }) {
                 {authorName}
               </span>
               <span className="text-xs" style={{ color: "rgba(227, 226, 227, 0.5)" }}>
-                · {formatDate(publishedAt)}
+                · {formatDate(publishedAt, { month: 'short' })}
               </span>
             </div>
 
@@ -109,6 +79,9 @@ function ArticleListItem({ article }: { article: Article }) {
                 src={thumbnailUrl}
                 alt={article.title}
                 className="h-[170px] w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, 240px"
+                width="240"
+                height="170"
               />
             ) : (
               <div className="flex h-[170px] w-full items-center justify-center bg-[#101314] text-sm text-[#6da99a]">

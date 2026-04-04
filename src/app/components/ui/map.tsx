@@ -12,16 +12,17 @@ interface MapProps {
 }
 
 export function Map({
-  center = [-6.3410, 106.7360], // Default: Universitas Terbuka coordinates [lat, lng]
-  zoom = 15,
+  center = [-0.915475, 100.460229], // Default: Universitas Andalas coordinates [lat, lng]
+  zoom = 17,
   className = "",
   showMarker = true,
   markerColor = "#3ECFB2",
 }: MapProps) {
   const [lat, lng] = center;
-  
-  // OpenStreetMap iframe URL
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`;
+
+  // OpenStreetMap iframe URL dengan bbox yang lebih kecil untuk zoom lebih dekat
+  const bboxSize = zoom >= 17 ? 0.001 : zoom >= 15 ? 0.0035 : 0.007;
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - bboxSize},${lat - bboxSize},${lng + bboxSize},${lat + bboxSize}&layer=mapnik&marker=${lat},${lng}`;
 
   return (
     <div className={`relative ${className}`}>

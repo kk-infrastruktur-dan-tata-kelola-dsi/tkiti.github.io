@@ -128,6 +128,9 @@ export function Gallery() {
                   src={image.url}
                   alt={image.alt || "Gallery image"}
                   className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  width="400"
+                  height="280"
                 />
                 {(image.alt || image.caption) && (
                   <div
@@ -166,6 +169,8 @@ export function Gallery() {
                       src={selectedImage.url}
                       alt={selectedImage.alt || "Full size gallery image"}
                       className="w-full h-auto max-h-[85vh] object-contain"
+                      loading="eager"
+                      decoding="sync"
                     />
                     {(selectedImage.alt || selectedImage.caption) && (
                       <div

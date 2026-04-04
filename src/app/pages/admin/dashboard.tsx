@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import {
   BookOpen, Users, ImageIcon, TrendingUp,
@@ -44,11 +44,13 @@ export function AdminDashboard() {
     load()
   }, [])
 
+  const totalLikes = useMemo(() => recent.reduce((s, a) => s + a.likes, 0), [recent])
+
   const cards = [
     { label: 'Total Artikel', value: stats.articles, icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Anggota', value: stats.anggota, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Foto Gallery', value: stats.gallery, icon: ImageIcon, color: 'text-violet-600', bg: 'bg-violet-50' },
-    { label: 'Total Likes', value: recent.reduce((s, a) => s + a.likes, 0), icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Total Likes', value: totalLikes, icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]
 
   return (

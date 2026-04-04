@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function Navigation() {
   const location = useLocation();
@@ -7,6 +7,8 @@ export function Navigation() {
   const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
   const [activeSection, setActiveSection] = useState<string>("beranda");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Cache section elements to avoid repeated DOM queries
+  const sectionsRef = useRef<HTMLElement[]>([]);
 
   const navItems = useMemo(
     () => [
@@ -75,15 +77,15 @@ export function Navigation() {
       return;
     }
 
-    // Only on home page: listen to scroll to determine active section
-    const sections = navItems
+    // Only on home page: cache section elements and listen to scroll
+    sectionsRef.current = navItems
       .map((item) => document.getElementById(item.id))
       .filter(Boolean) as HTMLElement[];
 
     const onScroll = () => {
       const marker = window.scrollY + 120;
       let current = "beranda"; // Default to beranda when at top
-      for (const section of sections) {
+      for (const section of sectionsRef.current) {
         if (marker >= section.offsetTop) current = section.id;
       }
       setActiveSection(current);

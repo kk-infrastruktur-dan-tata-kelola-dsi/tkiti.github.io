@@ -30,6 +30,23 @@ export function AdminGallery() {
   const [tanggal, setTanggal] = useState('')
   const [urutan, setUrutan] = useState('')
 
+  // Use refs to avoid stale closures in drag-drop callbacks
+  const captionRef = useRef(caption)
+  const tanggalRef = useRef(tanggal)
+  const urutanRef = useRef(urutan)
+
+  useEffect(() => {
+    captionRef.current = caption
+  }, [caption])
+
+  useEffect(() => {
+    tanggalRef.current = tanggal
+  }, [tanggal])
+
+  useEffect(() => {
+    urutanRef.current = urutan
+  }, [urutan])
+
   async function fetchGallery() {
     const res = await apiRequest<GalleryItem[]>('/gallery')
     if (res.success && res.data) setItems(res.data)
@@ -56,24 +73,39 @@ export function AdminGallery() {
     if (!files || files.length === 0) return
     setUploading(true)
 
-    for (const file of Array.from(files)) {
+    // Read from refs to avoid stale closures
+    const currentCaption = captionRef.current
+    const currentTanggal = tanggalRef.current
+    const currentUrutan = urutanRef.current
+
+    // Upload files in parallel for better performance
+    const uploadPromises = Array.from(files).map(async (file) => {
       const formData = new FormData()
       formData.append('file', file)
-      if (caption) formData.append('caption', caption)
-      if (tanggal) formData.append('tanggal', tanggal)
-      if (urutan) formData.append('urutan', urutan)
+      if (currentCaption) formData.append('caption', currentCaption)
+      if (currentTanggal) formData.append('tanggal', currentTanggal)
+      if (currentUrutan) formData.append('urutan', currentUrutan)
 
-      const res = await apiRequest<GalleryItem>('/gallery', {
+      return apiRequest<GalleryItem>('/gallery', {
         method: 'POST',
         body: formData,
-      })
+      }).then((res) => ({ file, res }))
+    })
 
+    const results = await Promise.all(uploadPromises)
+
+    let successCount = 0
+    for (const { file, res } of results) {
       if (res.success && res.data) {
-        setItems((prev) => [...prev, res.data!])
-        toast.success(`"${file.name}" berhasil diupload`)
+        successCount++
       } else {
         toast.error(res.error ?? `Gagal upload "${file.name}"`)
       }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} foto berhasil diupload`)
+      fetchGallery()
     }
 
     setCaption('')
@@ -81,7 +113,6 @@ export function AdminGallery() {
     setUrutan('')
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
-    fetchGallery()
   }
 
   async function handleDelete(id: number) {
@@ -98,7 +129,7 @@ export function AdminGallery() {
     e.preventDefault()
     setDragOver(false)
     handleUpload(e.dataTransfer.files)
-  }, [caption, tanggal, urutan])
+  }, [])
 
   async function handleDropReorder(targetId: number) {
     if (draggedId === null || draggedId === targetId) return

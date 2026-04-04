@@ -70,7 +70,7 @@ export async function apiRequest<T = unknown>(
   return res.json() as Promise<ApiResponse<T>>
 }
 
-export function toAbsoluteApiUrl(path?: string | null): string | null {
+export function toAbsoluteApiUrl(path?: string | null, options?: { width?: number; height?: number }): string | null {
   if (!path) return null
   if (/^https?:\/\//i.test(path)) return path
 
@@ -81,15 +81,22 @@ export function toAbsoluteApiUrl(path?: string | null): string | null {
     .map((segment) => encodeURIComponent(segment))
     .join('/')
 
+  let baseUrl: string
   if (normalized.startsWith('uploads/')) {
-    return `${API_URL}/${encoded}`
+    baseUrl = `${API_URL}/${encoded}`
+  } else if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
+    baseUrl = `${API_URL}/${encoded}`
+  } else {
+    baseUrl = `${API_URL}/${encoded}`
   }
 
-  // Some legacy records store only a bare filename (e.g. "Screenshot 2025-08-28 161941.png")
-  // Keep URL at API root because backend now exposes compatibility static mapping for root filenames.
-  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
-    return `${API_URL}/${encoded}`
+  // Add size query parameters if provided
+  if (options?.width || options?.height) {
+    const params = new URLSearchParams()
+    if (options.width) params.set('w', String(options.width))
+    if (options.height) params.set('h', options.height)
+    return `${baseUrl}?${params.toString()}`
   }
 
-  return `${API_URL}/${encoded}`
+  return baseUrl
 }

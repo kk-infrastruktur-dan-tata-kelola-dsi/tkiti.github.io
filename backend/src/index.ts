@@ -24,6 +24,18 @@ app.use(
   }),
 )
 
+// ─── Caching Headers ──────────────────────────────────────────────────────────
+// Add Cache-Control headers to GET requests for better performance
+app.use('*', async (c, next) => {
+  await next()
+  
+  // Only cache GET requests (not auth or admin endpoints)
+  if (c.req.method === 'GET' && !c.req.path.startsWith('/auth') && !c.req.path.startsWith('/content/')) {
+    // Cache for 5 minutes with stale-while-revalidate for 10 minutes
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+  }
+})
+
 // ─── Static files ─────────────────────────────────────────────────────────────
 // Foto upload tersedia di /uploads/gallery/... dan /uploads/struktur/...
 // root relatif terhadap process.cwd() → /app di Docker

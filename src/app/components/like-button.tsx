@@ -11,7 +11,15 @@ interface LikeButtonProps {
 
 export function LikeButton({ articleId, initialLikes }: LikeButtonProps) {
   const [likes, setLikes] = useState(initialLikes);
-  const [liked, setLiked] = useState(false);
+  // Initialize liked state from localStorage
+  const [liked, setLiked] = useState(() => {
+    try {
+      const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '{}')
+      return !!likedArticles[String(articleId)]
+    } catch {
+      return false
+    }
+  });
   const [loading, setLoading] = useState(false);
 
   async function handleLike() {
@@ -21,9 +29,23 @@ export function LikeButton({ articleId, initialLikes }: LikeButtonProps) {
     const previousLikes = likes;
 
     // Optimistic update
-    setLiked(!liked);
-    setLikes(liked ? likes - 1 : likes + 1);
+    const newLiked = !liked
+    setLiked(newLiked);
+    setLikes(newLiked ? likes + 1 : likes - 1);
     setLoading(true);
+
+    // Persist to localStorage
+    try {
+      const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '{}')
+      if (newLiked) {
+        likedArticles[String(articleId)] = Date.now()
+      } else {
+        delete likedArticles[String(articleId)]
+      }
+      localStorage.setItem('likedArticles', JSON.stringify(likedArticles))
+    } catch {
+      // Ignore localStorage errors
+    }
 
     try {
       const res = await apiRequest<{ success: boolean; likes?: number }>(
@@ -39,7 +61,7 @@ export function LikeButton({ articleId, initialLikes }: LikeButtonProps) {
         // Rollback on error
         setLiked(previousLiked);
         setLikes(previousLikes);
-        toast.error("Gagal menyimpan like");
+        toast.error(res.error ?? "Gagal menyimpan like");
       }
     } catch {
       // Rollback on error

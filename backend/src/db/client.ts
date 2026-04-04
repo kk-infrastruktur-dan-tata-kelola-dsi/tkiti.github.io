@@ -80,6 +80,9 @@ sqlite.exec(`
     updated_at integer
   );
   CREATE UNIQUE INDEX IF NOT EXISTS articles_slug_unique ON articles (slug);
+  CREATE INDEX IF NOT EXISTS articles_published_created_at ON articles (published, created_at DESC);
+  CREATE INDEX IF NOT EXISTS articles_published ON articles (published);
+  CREATE INDEX IF NOT EXISTS articles_created_at ON articles (created_at DESC);
 
   CREATE TABLE IF NOT EXISTS users (
     id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -87,6 +90,18 @@ sqlite.exec(`
     password_hash text NOT NULL
   );
   CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users (username);
+
+  -- Gallery indexes for ordering queries
+  CREATE INDEX IF NOT EXISTS gallery_urutan ON gallery (urutan);
+
+  -- Anggota indexes for hierarchy and period queries
+  CREATE INDEX IF NOT EXISTS anggota_periode_id ON anggota (periode_id);
+  CREATE INDEX IF NOT EXISTS anggota_master_id ON anggota (master_id);
+  CREATE INDEX IF NOT EXISTS anggota_parent_id ON anggota (parent_id);
+  CREATE INDEX IF NOT EXISTS anggota_urutan ON anggota (urutan);
+
+  -- Struktur periode indexes for active period queries
+  CREATE INDEX IF NOT EXISTS struktur_periode_is_active ON struktur_periode (is_active);
 `)
 
 const anggotaColumns = sqlite.prepare(`PRAGMA table_info(anggota)`).all() as Array<{ name: string }>
