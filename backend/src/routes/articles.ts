@@ -75,7 +75,7 @@ articleRoutes.get('/', (c) => {
   const limitNum = limit ? parseInt(limit, 10) : undefined
   
   // Only select necessary columns for listing (exclude full content)
-  let query = db
+  const baseQuery = db
     .select({
       id: articles.id,
       slug: articles.slug,
@@ -95,11 +95,9 @@ articleRoutes.get('/', (c) => {
     .where(eq(articles.published, true))
     .orderBy(desc(articles.createdAt))
   
-  if (limitNum && !isNaN(limitNum) && limitNum > 0) {
-    query = query.limit(limitNum)
-  }
-  
-  const rows = query.all()
+  const rows = limitNum && !isNaN(limitNum) && limitNum > 0
+    ? baseQuery.limit(limitNum).all()
+    : baseQuery.all()
 
   return c.json({ success: true, data: rows })
 })
