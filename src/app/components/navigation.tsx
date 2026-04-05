@@ -118,7 +118,7 @@ export function Navigation() {
       } : {
         background: 'rgba(7, 8, 9, 0.95)',
         backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(62, 207, 178, 0.15)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         boxShadow: '0 1px 20px rgba(0, 0, 0, 0.5)',
         WebkitBackdropFilter: 'blur(16px)',
       }}
@@ -259,7 +259,7 @@ export function Navigation() {
           style={{
             background: 'rgba(7, 8, 9, 0.95)',
             backdropFilter: 'blur(20px)',
-            borderColor: 'rgba(62, 207, 178, 0.15)',
+            borderColor: 'rgba(255, 255, 255, 0.08)',
           }}
         >
           <div className="flex flex-col gap-2 px-4 py-4">
