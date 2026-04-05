@@ -18,7 +18,7 @@ export function Hero() {
   const ctaSecondary = data["hero.cta_secondary"] ?? "Pelajari Sejarah";
 
   return (
-    <section className="relative flex flex-col items-center justify-center px-6 text-center overflow-hidden min-h-[70vh] py-12">
+    <section className="relative flex flex-col items-center justify-center px-6 text-center overflow-hidden min-h-[70vh]" style={{ background: '#070809' }}>
       <BackgroundPaths />
 
       {/* Content */}
@@ -120,7 +120,7 @@ export function Hero() {
           </motion.button>
         </motion.div>
       </div>
-      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#070809] to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#070809] to-transparent" />
     </section>
   );
 }

@@ -22,7 +22,6 @@ function BaseShell({ children }: { children: React.ReactNode }) {
     <div
       className="relative min-h-screen overflow-x-hidden selection:bg-[#3ECFB2] selection:text-[#00382e]"
       style={{
-        backgroundColor: '#070809',
         color: '#e3e2e3',
         fontFamily: "'DM Sans', sans-serif"
       }}

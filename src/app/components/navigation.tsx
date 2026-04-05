@@ -7,7 +7,7 @@ export function Navigation() {
   const logoSrc = `${import.meta.env.BASE_URL}images/logo.png`;
   const [activeSection, setActiveSection] = useState<string>("beranda");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Cache section elements to avoid repeated DOM queries
+  const [scrolled, setScrolled] = useState(false);
   const sectionsRef = useRef<HTMLElement[]>([]);
 
   const navItems = useMemo(
@@ -26,11 +26,10 @@ export function Navigation() {
     e.preventDefault();
     setMobileMenuOpen(false);
 
-    // If we're already on the home page, just scroll to the section
     if (location.pathname === '/') {
       const element = document.getElementById(sectionId);
       if (element) {
-        const offsetTop = element.offsetTop - 80; // Account for fixed navbar height
+        const offsetTop = element.offsetTop - 80;
         setActiveSection(sectionId);
         window.scrollTo({
           top: offsetTop,
@@ -38,9 +37,7 @@ export function Navigation() {
         });
       }
     } else {
-      // If we're on a different page, navigate to home first, then scroll
       navigate(`/${sectionId}`);
-      // Don't set activeSection here - let the useEffect handle it after navigation
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -65,26 +62,23 @@ export function Navigation() {
     };
     const sectionFromPath = pathSectionMap[location.pathname];
 
-    // If we're on a section page, set that section as active
     if (sectionFromPath) {
       setActiveSection(sectionFromPath);
       return;
     }
 
-    // Clear active section on non-home, non-section pages (e.g. /article, /article/:slug)
     if (location.pathname !== "/") {
       setActiveSection("");
       return;
     }
 
-    // Only on home page: cache section elements and listen to scroll
     sectionsRef.current = navItems
       .map((item) => document.getElementById(item.id))
       .filter(Boolean) as HTMLElement[];
 
     const onScroll = () => {
       const marker = window.scrollY + 120;
-      let current = "beranda"; // Default to beranda when at top
+      let current = "beranda";
       for (const section of sectionsRef.current) {
         if (marker >= section.offsetTop) current = section.id;
       }
@@ -96,14 +90,37 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [location.pathname, navItems]);
 
+  // Separate effect for navbar transparency
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      setScrolled(true);
+      return;
+    }
+    setScrolled(false);
+    const handleScroll = () => setScrolled(window.scrollY > 100);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [location.pathname]);
+
+  const isOnHome = location.pathname === '/';
+  const isTransparent = isOnHome && !scrolled;
+
   return (
     <nav
-      className="fixed top-0 w-full z-50 border-b"
-      style={{
-        background: 'rgba(7, 8, 9, 0.6)',
-        backdropFilter: 'blur(20px)',
-        borderColor: 'rgba(62, 207, 178, 0.15)',
-        boxShadow: '0 0 40px rgba(62, 207, 178, 0.1)',
+      className="fixed top-0 w-full z-50"
+      style={isTransparent ? {
+        background: 'transparent',
+        backdropFilter: 'none',
+        borderBottom: 'none',
+        boxShadow: 'none',
+        WebkitBackdropFilter: 'none',
+      } : {
+        background: 'rgba(7, 8, 9, 0.95)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(62, 207, 178, 0.15)',
+        boxShadow: '0 1px 20px rgba(0, 0, 0, 0.5)',
+        WebkitBackdropFilter: 'blur(16px)',
       }}
     >
       <div className="flex justify-between items-center px-4 md:px-8 h-20 max-w-full mx-auto">
@@ -153,69 +170,82 @@ export function Navigation() {
           <span
             className="block w-6 h-0.5 transition-all duration-300"
             style={{
-              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              background: mobileMenuOpen ? 'transparent' : '#61ECCD',
               transform: mobileMenuOpen ? 'rotate(45deg) translate(2px, 2px)' : 'none',
             }}
           />
           <span
             className="block w-6 h-0.5 transition-all duration-300"
             style={{
-              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              background: mobileMenuOpen ? 'transparent' : '#61ECCD',
               opacity: mobileMenuOpen ? 0 : 1,
             }}
           />
           <span
             className="block w-6 h-0.5 transition-all duration-300"
             style={{
-              background: mobileMenuOpen ? 'transparent' : '#3ECFB2',
+              background: mobileMenuOpen ? 'transparent' : '#61ECCD',
               transform: mobileMenuOpen ? 'rotate(-45deg) translate(2px, -2px)' : 'none',
             }}
           />
         </button>
 
         {/* Desktop nav items */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-1">
           {navItems.slice(1).map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
               onClick={(e) => handleSectionClick(e, item.id)}
-              className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-1.5"
+              className="relative uppercase tracking-[0.1em] transition-all duration-300 px-3 py-1.5"
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '12px',
-                color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
-                borderColor: activeSection === item.id ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
-                background: activeSection === item.id ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
+                fontSize: '11px',
+                color: activeSection === item.id ? '#61ECCD' : 'rgba(227, 226, 227, 0.8)',
               }}
             >
               {item.label}
+              {/* Active indicator — bottom dot */}
+              {activeSection === item.id && (
+                <span
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                  style={{ background: '#61ECCD' }}
+                />
+              )}
             </a>
           ))}
           <Link
             to="/article"
-            className="uppercase tracking-[0.12em] transition-colors duration-300 rounded-full border px-4 py-1.5"
+            className="relative uppercase tracking-[0.1em] transition-all duration-300 px-3 py-1.5"
             style={{
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '12px',
-              color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
-              borderColor: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
-              background: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
+              fontSize: '11px',
+              color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#61ECCD' : 'rgba(227, 226, 227, 0.8)',
             }}
           >
             Article
+            {(location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) && (
+              <span
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                style={{ background: '#61ECCD' }}
+              />
+            )}
           </Link>
         </div>
 
         <button
           onClick={(e) => handleSectionClick(e as any, 'kontak')}
-          className="hidden md:block px-6 py-2 font-bold tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
+          className="hidden md:block px-5 py-2 font-bold tracking-[0.12em] hover:text-white outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0"
           style={{
             fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '12px',
-            background: '#3ECFB2',
-            color: '#00382e',
+            fontSize: '11px',
+            background: '#070809',
+            color: 'rgba(227, 226, 227, 0.9)',
             borderRadius: '2px',
+            border: '1px solid rgba(227, 226, 227, 0.3)',
+            outline: 'none',
+            boxShadow: 'none',
+            transition: 'color 0.2s',
           }}
         >
           HUBUNGI KAMI
@@ -242,7 +272,7 @@ export function Navigation() {
                 style={{
                   fontFamily: 'JetBrains Mono, monospace',
                   fontSize: '12px',
-                  color: activeSection === item.id ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+                  color: activeSection === item.id ? '#61ECCD' : 'rgba(227, 226, 227, 0.8)',
                   borderColor: activeSection === item.id ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
                   background: activeSection === item.id ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
                 }}
@@ -257,7 +287,7 @@ export function Navigation() {
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '12px',
-                color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#3ECFB2' : 'rgba(227, 226, 227, 0.72)',
+                color: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? '#61ECCD' : 'rgba(227, 226, 227, 0.8)',
                 borderColor: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.55)' : 'rgba(62, 207, 178, 0.22)',
                 background: (location.pathname === '/article' || /^\/article\/[^/]+$/.test(location.pathname)) ? 'rgba(62, 207, 178, 0.10)' : 'rgba(7, 8, 9, 0.35)',
               }}
@@ -266,13 +296,17 @@ export function Navigation() {
             </Link>
             <button
               onClick={(e) => handleSectionClick(e as any, 'kontak')}
-              className="mt-2 px-6 py-2 font-bold tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
+              className="mt-2 px-6 py-2 font-bold tracking-[0.15em] hover:text-white outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0"
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '12px',
-                background: '#3ECFB2',
-                color: '#00382e',
+                background: '#070809',
+                color: 'rgba(227, 226, 227, 0.9)',
                 borderRadius: '2px',
+                border: '1px solid rgba(227, 226, 227, 0.3)',
+                outline: 'none',
+                boxShadow: 'none',
+                transition: 'color 0.2s',
               }}
             >
               HUBUNGI KAMI

@@ -35,24 +35,8 @@ function applyColor(svgString: string, color: string): string {
 
 const TechItem = ({ tech }: { tech: typeof technologies[0] }) => (
   <div
-    className="marquee-item flex items-center gap-3 px-4 py-2 flex-shrink-0 transition-all duration-300 cursor-pointer"
-    style={{
-      background: "rgba(13, 14, 15, 0.6)",
-      backdropFilter: "blur(20px)",
-      border: "1px solid rgba(62, 207, 178, 0.15)",
-      borderRadius: "8px",
-    }}
+    className="marquee-item flex items-center gap-3 px-4 py-2 flex-shrink-0 cursor-pointer"
     title={tech.name}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "translateY(-5px)";
-      e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.35)";
-      e.currentTarget.style.background = "rgba(97, 236, 205, 0.05)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "translateY(0)";
-      e.currentTarget.style.borderColor = "rgba(62, 207, 178, 0.15)";
-      e.currentTarget.style.background = "rgba(13, 14, 15, 0.6)";
-    }}
   >
     <div
       className="flex items-center justify-center"
@@ -75,60 +59,60 @@ const TechItem = ({ tech }: { tech: typeof technologies[0] }) => (
 
 export function TechMarquee() {
   return (
-    <section
-      className="py-6 overflow-hidden"
-    >
-      <div
-        className="marquee-wrapper relative w-full"
-        onMouseEnter={(e) => {
-          const track = e.currentTarget.querySelector(".marquee-track") as HTMLElement;
-          if (track) track.style.animationPlayState = "paused";
-        }}
-        onMouseLeave={(e) => {
-          const track = e.currentTarget.querySelector(".marquee-track") as HTMLElement;
-          if (track) track.style.animationPlayState = "running";
-        }}
-      >
-        <div className="marquee-track flex items-center">
-          {/* Set 1 */}
-          {technologies.map((tech, i) => (
-            <TechItem key={i} tech={tech} />
-          ))}
-          {/* Set 2 (duplicate for seamless loop) */}
-          {technologies.map((tech, i) => (
-            <TechItem key={`dup1-${i}`} tech={tech} />
-          ))}
-          {/* Set 3 (extra buffer to prevent gaps) */}
-          {technologies.map((tech, i) => (
-            <TechItem key={`dup2-${i}`} tech={tech} />
-          ))}
+    <section className="relative bg-[#070809]" style={{ overflow: 'visible', zIndex: 5 }}>
+      <div style={{ paddingTop: '48px', paddingBottom: '32px', overflow: 'visible' }}>
+        <div
+          className="marquee-wrapper relative w-full"
+          style={{ overflow: 'hidden', paddingTop: '8px', marginTop: '-8px' }}
+        >
+          <div className="marquee-track flex items-center">
+            {/* Set 1 */}
+            {technologies.map((tech, i) => (
+              <TechItem key={i} tech={tech} />
+            ))}
+            {/* Set 2 (duplicate for seamless loop) */}
+            {technologies.map((tech, i) => (
+              <TechItem key={`dup1-${i}`} tech={tech} />
+            ))}
+          </div>
         </div>
+        {/* Fade masks — items appear/disappear from darkness */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#070809] to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#070809] to-transparent z-10" />
       </div>
 
-      <style>
-        {`
-          .marquee-wrapper {
-            overflow: hidden;
+      <style>{`
+        .marquee-track {
+          display: flex;
+          width: max-content;
+          animation: marquee 60s linear infinite;
+          will-change: transform;
+        }
+        .marquee-wrapper:hover .marquee-track {
+          animation-play-state: paused;
+        }
+        .marquee-item {
+          margin: 0 8px;
+          transition: all 0.3s ease;
+          background: rgba(13, 14, 15, 0.6);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(62, 207, 178, 0.15);
+          border-radius: 8px;
+        }
+        .marquee-item:hover {
+          transform: translateY(-6px);
+          border-color: rgba(62, 207, 178, 0.35);
+          background: rgba(97, 236, 205, 0.05);
+        }
+        @keyframes marquee {
+          0% {
+            transform: translateX(0);
           }
-          .marquee-track {
-            display: flex;
-            width: max-content;
-            animation: marquee 40s linear infinite;
-            will-change: transform;
+          100% {
+            transform: translateX(calc(-100% / 2));
           }
-          .marquee-item {
-            margin: 0 8px;
-          }
-          @keyframes marquee {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(calc(-100% / 3));
-            }
-          }
-        `}
-      </style>
+        }
+      `}</style>
     </section>
   );
 }

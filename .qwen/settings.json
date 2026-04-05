@@ -12,7 +12,8 @@
       "Bash(git push *)",
       "Bash(rm *)",
       "Bash(del *)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(npm run *)"
     ]
   },
   "$version": 3
