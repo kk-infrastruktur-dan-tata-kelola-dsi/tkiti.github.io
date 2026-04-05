@@ -35,17 +35,6 @@ function BaseShell({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      {/* Background Blobs */}
-      <div
-        className="fixed w-[600px] h-[600px] rounded-full opacity-40 blur-[120px] pointer-events-none"
-        style={{
-          background: 'rgba(57, 73, 83, 0.3)',
-          bottom: '10%',
-          left: '-10%',
-          zIndex: -1,
-        }}
-      />
-
       <Navigation />
       {children}
     </div>
