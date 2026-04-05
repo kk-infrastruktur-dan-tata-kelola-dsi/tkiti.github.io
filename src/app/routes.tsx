@@ -37,15 +37,6 @@ function BaseShell({ children }: { children: React.ReactNode }) {
 
       {/* Background Blobs */}
       <div
-        className="fixed w-[500px] h-[500px] rounded-full opacity-40 blur-[120px] pointer-events-none"
-        style={{
-          background: 'rgba(62, 207, 178, 0.2)',
-          top: '-10%',
-          right: '-5%',
-          zIndex: -1,
-        }}
-      />
-      <div
         className="fixed w-[600px] h-[600px] rounded-full opacity-40 blur-[120px] pointer-events-none"
         style={{
           background: 'rgba(57, 73, 83, 0.3)',
