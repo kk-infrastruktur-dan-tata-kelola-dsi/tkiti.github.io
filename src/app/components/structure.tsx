@@ -45,11 +45,9 @@ function formatPeriodeLabel(periode: Periode) {
 
 function FamilyTreeNode({
   node,
-  compact = false,
   onPersonClick,
 }: {
   node: TeamTreeNode;
-  compact?: boolean;
   onPersonClick?: (member: TeamMember) => void;
 }) {
   const initials = node.nama
@@ -105,18 +103,20 @@ function FamilyTreeNode({
       {node.children.length > 0 && (
         <>
           <div className="h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-          <ul className={compact ? "relative grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3" : "relative flex flex-wrap items-start justify-center gap-x-4 gap-y-4 pt-4"}>
-            <div
-              className="absolute left-1/2 top-0 h-px -translate-x-1/2"
-              style={{
-                width: `calc(100% - 1.5rem)`,
-                background: "rgba(62, 207, 178, 0.35)",
-              }}
-            />
+          <ul className="relative flex flex-nowrap items-start justify-center gap-x-6 pt-6">
+            {node.children.length > 1 && (
+              <div
+                className="absolute left-[50%] top-0 h-px -translate-x-1/2"
+                style={{
+                  width: `calc(100% - 200px)`,
+                  background: "rgba(62, 207, 178, 0.35)",
+                }}
+              />
+            )}
             {node.children.map((child, index) => (
               <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
-                <div className="absolute -top-4 h-4 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-                <FamilyTreeNode node={child} compact={compact} onPersonClick={onPersonClick} />
+                <div className="absolute -top-6 h-6 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                <FamilyTreeNode node={child} onPersonClick={onPersonClick} />
               </li>
             ))}
           </ul>
@@ -137,7 +137,7 @@ export function Structure() {
     async function fetchData() {
       try {
         const [resPeriode] = await Promise.all([
-          apiRequest<{ success: boolean; data?: Periode[] }>("/struktur/periode"),
+          apiRequest<Periode[]>("/struktur/periode"),
         ]);
         const periodeList = resPeriode.success && resPeriode.data ? resPeriode.data : [];
         const activePeriode = periodeList.find((p) => p.isActive) ?? periodeList[0] ?? null;
@@ -147,7 +147,7 @@ export function Structure() {
         setSelectedPeriodeId(initialPeriodeId);
 
         if (initialPeriodeId) {
-          const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] }>(`/struktur?periodeId=${initialPeriodeId}`);
+          const resMembers = (await apiRequest(`/struktur?periodeId=${initialPeriodeId}`)) as { success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] };
           if (resMembers.success && resMembers.tree) setTree(resMembers.tree);
         } else {
           setTree([]);
@@ -164,13 +164,11 @@ export function Structure() {
 
   async function onChangePeriode(periodeId: number) {
     setSelectedPeriodeId(periodeId);
-    const resMembers = await apiRequest<{ success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] }>(`/struktur?periodeId=${periodeId}`);
+    const resMembers = (await apiRequest(`/struktur?periodeId=${periodeId}`)) as { success: boolean; data?: TeamMember[]; tree?: TeamTreeNode[] };
     if (resMembers.success && resMembers.tree) setTree(resMembers.tree);
   }
 
   const familyTree = useMemo(() => tree, [tree]);
-
-  const compactTree = familyTree.length > 0 && familyTree[0].children.length > 4;
 
   const personInitials = selectedPerson
     ? selectedPerson.nama
@@ -264,12 +262,12 @@ export function Structure() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, ease }}
-            className="rounded-2xl border p-4 md:p-6"
+            className="rounded-2xl border p-4 md:p-6 overflow-x-auto w-full"
             style={{ borderColor: "rgba(62, 207, 178, 0.16)", background: "rgba(8, 10, 11, 0.7)" }}
           >
-            <ul className="flex justify-center pb-1">
+            <ul className="flex justify-center pb-4 min-w-max">
               {familyTree.map((root, index) => (
-                <FamilyTreeNode key={`${root.role}-${index}`} node={root} compact={compactTree} onPersonClick={setSelectedPerson} />
+                <FamilyTreeNode key={`${root.role}-${index}`} node={root} onPersonClick={setSelectedPerson} />
               ))}
             </ul>
           </motion.div>

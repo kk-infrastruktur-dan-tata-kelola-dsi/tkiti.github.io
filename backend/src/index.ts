@@ -26,11 +26,16 @@ app.use(
 
 // ─── Caching Headers ──────────────────────────────────────────────────────────
 // Add Cache-Control headers to GET requests for better performance
-app.use('*', async (c, next) => {
+app.use('*', async (c: any, next: any) => {
   await next()
   
   // Only cache GET requests (not auth or admin endpoints)
-  if (c.req.method === 'GET' && !c.req.path.startsWith('/auth') && !c.req.path.startsWith('/content/')) {
+  if (
+    c.req.method === 'GET' &&
+    !c.req.path.startsWith('/auth') &&
+    !c.req.path.startsWith('/content/') &&
+    !c.req.header('Authorization')
+  ) {
     // Cache for 5 minutes with stale-while-revalidate for 10 minutes
     c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   }
@@ -49,7 +54,7 @@ app.use('/*.gif', serveStatic({ root: './uploads/articles' }))
 app.use('/*.svg', serveStatic({ root: './uploads/articles' }))
 
 // ─── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (c) => c.json({ status: 'ok' }))
+app.get('/health', (c: any) => c.json({ status: 'ok' }))
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.route('/auth',     authRoutes)
@@ -59,7 +64,7 @@ app.route('/gallery',  galleryRoutes)
 app.route('/struktur', strukturRoutes)
 
 // ─── 404 fallback ─────────────────────────────────────────────────────────────
-app.notFound((c) => c.json({ success: false, error: 'Route tidak ditemukan' }, 404))
+app.notFound((c: any) => c.json({ success: false, error: 'Route tidak ditemukan' }, 404))
 
 // ─── Start server ─────────────────────────────────────────────────────────────
 const port = Number(process.env.PORT) || 5000

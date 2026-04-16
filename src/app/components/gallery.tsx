@@ -24,9 +24,9 @@ export function Gallery() {
   useEffect(() => {
     async function fetchGallery() {
       try {
-        const res = await apiRequest<{ success: boolean; data?: GalleryImage[] }>("/gallery");
+        const res = await apiRequest<GalleryImage[]>("/gallery");
         if (res.success && res.data) {
-          const normalized = res.data.map((image) => {
+          const normalized = res.data.map((image: GalleryImage) => {
             const src = image.url ?? image.src ?? "";
             const absoluteSrc = src.startsWith("http") ? src : `${API_URL}/${src.replace(/^\//, "")}`;
             return {
@@ -107,7 +107,7 @@ export function Gallery() {
               visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
             }}
           >
-            {images.map((image, index) => (
+            {images.map((image) => (
               <motion.div
                 key={image.id}
                 className="relative overflow-hidden group cursor-pointer"

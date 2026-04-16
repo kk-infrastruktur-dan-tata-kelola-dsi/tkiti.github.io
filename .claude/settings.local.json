@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/secondbrain/03-Projects/tkiti.github.io/*.json)",
+      "Bash(xargs grep:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"console.log\\(process.version\\)\")",
+      "Bash(npm --version)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node -e \"const dagre = require\\('@dagrejs/dagre'\\); console.log\\('dagre loaded, version:', Object.keys\\(dagre\\)\\)\")"
+    ]
+  }
+}

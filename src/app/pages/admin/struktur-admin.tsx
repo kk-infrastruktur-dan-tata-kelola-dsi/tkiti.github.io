@@ -121,7 +121,7 @@ type MasterNodeData = {
   onDelete: (id: number) => void
 }
 
-function MasterCustomNode({ data, id }: NodeProps<Node<MasterNodeData>>) {
+function MasterCustomNode({ data }: NodeProps<Node<MasterNodeData>>) {
   const divisiColor: Record<string, string> = {
     kepemimpinan: 'bg-amber-100 text-amber-700 border-amber-200',
     anggota: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -673,7 +673,8 @@ export function AdminStruktur() {
     if (resItems.success && resItems.data) setItems(resItems.data)
   }
 
-  async function submitPeriode() {
+  async function submitPeriode(e?: React.MouseEvent) {
+    if (e) e.preventDefault()
     if (!periodeForm.nama.trim()) {
       toast.error('Nama periode wajib diisi')
       return
@@ -793,7 +794,8 @@ export function AdminStruktur() {
     setMasterDialogOpen(true)
   }, [])
 
-  async function submitMaster() {
+  async function submitMaster(e?: React.MouseEvent) {
+    if (e) e.preventDefault()
     if (!masterRole.trim()) {
       toast.error('Role master wajib diisi')
       return
@@ -905,7 +907,8 @@ export function AdminStruktur() {
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  async function handleSave() {
+  async function handleSave(e?: React.MouseEvent) {
+    if (e) e.preventDefault()
     if (!effectivePeriodeId) {
       toast.error('Periode tidak valid')
       return
@@ -1147,7 +1150,7 @@ export function AdminStruktur() {
                     <Label className="text-xs text-gray-500">Nama</Label>
                     <Input
                       value={form.nama}
-                      onChange={(e) => setForm((prev) => ({ ...prev, nama: e.target.value }))}
+                      onChange={(e: any) => setForm((prev) => ({ ...prev, nama: e.target.value }))}
                       placeholder="Masukkan nama"
                       autoFocus
                     />
@@ -1188,16 +1191,16 @@ export function AdminStruktur() {
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
               <Label>Nama Periode</Label>
-              <Input value={periodeForm.nama} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, nama: e.target.value }))} />
+              <Input value={periodeForm.nama} onChange={(e: any) => setPeriodeForm((prev) => ({ ...prev, nama: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label>Mulai</Label>
-                <Input type="date" value={periodeForm.mulai} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, mulai: e.target.value }))} />
+                <Input type="date" value={periodeForm.mulai} onChange={(e: any) => setPeriodeForm((prev) => ({ ...prev, mulai: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Selesai</Label>
-                <Input type="date" value={periodeForm.selesai} onChange={(e) => setPeriodeForm((prev) => ({ ...prev, selesai: e.target.value }))} />
+                <Input type="date" value={periodeForm.selesai} onChange={(e: any) => setPeriodeForm((prev) => ({ ...prev, selesai: e.target.value }))} />
               </div>
             </div>
           </div>
@@ -1228,7 +1231,7 @@ export function AdminStruktur() {
               <Label>Nama Role</Label>
               <Input
                 value={masterRole}
-                onChange={(e) => setMasterRole(e.target.value)}
+                onChange={(e: any) => setMasterRole(e.target.value)}
                 placeholder="Contoh: Koordinator Divisi"
               />
             </div>
@@ -1266,7 +1269,7 @@ export function AdminStruktur() {
       </Dialog>
 
       {/* Delete master confirmation */}
-      <AlertDialog open={confirmDeleteMasterId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteMasterId(null) }}>
+      <AlertDialog open={confirmDeleteMasterId !== null} onOpenChange={(open: boolean) => { if (!open) setConfirmDeleteMasterId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus role master?</AlertDialogTitle>
@@ -1284,7 +1287,7 @@ export function AdminStruktur() {
       </AlertDialog>
 
       {/* Delete anggota confirmation */}
-      <AlertDialog open={confirmDeleteAnggotaId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteAnggotaId(null) }}>
+      <AlertDialog open={confirmDeleteAnggotaId !== null} onOpenChange={(open: boolean) => { if (!open) setConfirmDeleteAnggotaId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus anggota?</AlertDialogTitle>
