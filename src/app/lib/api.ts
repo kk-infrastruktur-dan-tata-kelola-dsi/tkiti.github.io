@@ -70,33 +70,49 @@ export async function apiRequest<T = unknown>(
   return res.json() as Promise<ApiResponse<T>>
 }
 
-export function toAbsoluteApiUrl(path?: string | null, options?: { width?: number; height?: number }): string | null {
+type ApiImageOptions = {
+  width?: number
+  height?: number
+  quality?: number
+}
+
+export function toAbsoluteApiUrl(path?: string | null, options?: ApiImageOptions): string | null {
   if (!path) return null
-  if (/^https?:\/\//i.test(path)) return path
 
   const trimmed = path.trim()
-  const normalized = trimmed.replace(/^\/+/, '')
-  const encoded = normalized
-    .split('/')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/')
+  const isAbsolute = /^https?:\/\//i.test(trimmed)
+  let baseUrl = trimmed
 
-  let baseUrl: string
-  if (normalized.startsWith('uploads/')) {
-    baseUrl = `${API_URL}/${encoded}`
-  } else if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
-    baseUrl = `${API_URL}/${encoded}`
+  if (!isAbsolute) {
+    const normalized = trimmed.replace(/^\/+/, '')
+    const encoded = normalized
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+
+    if (normalized.startsWith('uploads/')) {
+      baseUrl = `${API_URL}/${encoded}`
+    } else if (/\.(png|jpe?g|webp|gif|svg)$/i.test(normalized)) {
+      baseUrl = `${API_URL}/${encoded}`
+    } else {
+      baseUrl = `${API_URL}/${encoded}`
+    }
+  }
+
+  // Add image optimization query parameters if provided
+  if (options?.width || options?.height || options?.quality) {
+    let optimizedUrl: URL
+    try {
+      optimizedUrl = new URL(baseUrl)
+    } catch {
+      return baseUrl
+    }
+
+    if (options.width) optimizedUrl.searchParams.set('w', String(options.width))
+    if (options.height) optimizedUrl.searchParams.set('h', String(options.height))
+    if (options.quality) optimizedUrl.searchParams.set('q', String(options.quality))
+    return optimizedUrl.toString()
   } else {
-    baseUrl = `${API_URL}/${encoded}`
+    return baseUrl
   }
-
-  // Add size query parameters if provided
-  if (options?.width || options?.height) {
-    const params = new URLSearchParams()
-    if (options.width) params.set('w', String(options.width))
-    if (options.height) params.set('h', options.height)
-    return `${baseUrl}?${params.toString()}`
-  }
-
-  return baseUrl
 }

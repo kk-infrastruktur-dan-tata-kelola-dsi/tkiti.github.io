@@ -1,8 +1,9 @@
 import { writeFile, unlink } from 'node:fs/promises'
 import { mkdirSync } from 'node:fs'
-import { join, dirname, extname } from 'node:path'
+import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
+import sharp from 'sharp'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -12,10 +13,32 @@ export const uploadsRoot = join(__dirname, '../../uploads')
 export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 export const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 
+type UploadProfile = {
+  maxWidth: number
+  maxHeight: number
+  quality: number
+}
+
+const DEFAULT_UPLOAD_PROFILE: UploadProfile = {
+  maxWidth: 1600,
+  maxHeight: 1600,
+  quality: 78,
+}
+
+const UPLOAD_PROFILES: Record<string, UploadProfile> = {
+  articles: { maxWidth: 1600, maxHeight: 900, quality: 78 },
+  gallery: { maxWidth: 1920, maxHeight: 1280, quality: 80 },
+  struktur: { maxWidth: 512, maxHeight: 512, quality: 80 },
+}
+
 export function validateImage(file: File): string | null {
   if (!ALLOWED_TYPES.includes(file.type)) return 'Hanya jpg, png, atau webp yang diizinkan'
   if (file.size > MAX_SIZE) return 'Ukuran file maksimal 5MB'
   return null
+}
+
+function getUploadProfile(subfolder: string): UploadProfile {
+  return UPLOAD_PROFILES[subfolder] ?? DEFAULT_UPLOAD_PROFILE
 }
 
 /**
@@ -23,15 +46,29 @@ export function validateImage(file: File): string | null {
  * Path format: uploads/<subfolder>/<timestamp>-<hex>.<ext>
  */
 export async function saveFile(file: File, subfolder: string): Promise<string> {
-  const dir = join(uploadsRoot, subfolder)
+  const normalizedSubfolder = subfolder.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'misc'
+  const dir = join(uploadsRoot, normalizedSubfolder)
   mkdirSync(dir, { recursive: true })
 
-  const ext = extname(file.name).toLowerCase() || '.jpg'
-  const filename = `${Date.now()}-${randomBytes(4).toString('hex')}${ext}`
-  const buffer = Buffer.from(await file.arrayBuffer())
-  await writeFile(join(dir, filename), buffer)
+  const profile = getUploadProfile(normalizedSubfolder)
+  const filename = `${Date.now()}-${randomBytes(4).toString('hex')}.webp`
+  const inputBuffer = Buffer.from(await file.arrayBuffer())
+  const optimizedBuffer = await sharp(inputBuffer, { failOn: 'none' })
+    .rotate()
+    .resize({
+      width: profile.maxWidth,
+      height: profile.maxHeight,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({
+      quality: profile.quality,
+      effort: 4,
+    })
+    .toBuffer()
+  await writeFile(join(dir, filename), optimizedBuffer)
 
-  return `uploads/${subfolder}/${filename}`
+  return `uploads/${normalizedSubfolder}/${filename}`
 }
 
 /**

@@ -91,8 +91,13 @@ export function ArticleDetail() {
   const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
   const category = article.category ?? "Artikel";
   const thumbnailRaw = article.thumbnail_url ?? article.thumbnail ?? null;
-  const thumbnailUrl = toAbsoluteApiUrl(thumbnailRaw);
-  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null);
+  const thumbnailSeoUrl = toAbsoluteApiUrl(thumbnailRaw);
+  const thumbnailHeroUrl = toAbsoluteApiUrl(thumbnailRaw, {
+    width: 760,
+    height: 428,
+    quality: 76,
+  });
+  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null, { width: 96, height: 96, quality: 80 });
   const shareUrl = `${API_URL}/articles/share/${encodeURIComponent(article.slug)}`;
 
   return (
@@ -100,7 +105,7 @@ export function ArticleDetail() {
       <SEO
         title={article.title}
         description={article.subtitle || article.excerpt || ""}
-        image={thumbnailUrl || undefined}
+        image={thumbnailSeoUrl || undefined}
         imageAlt={`Thumbnail artikel: ${article.title}`}
         url={`/article/${article.slug}`}
         type="article"
@@ -208,10 +213,10 @@ export function ArticleDetail() {
         </div>
 
         {/* Hero Thumbnail */}
-        {thumbnailUrl && (
+        {(thumbnailHeroUrl || thumbnailSeoUrl) && (
           <div className="mb-12 overflow-hidden rounded-xl border" style={{ borderColor: "rgba(227, 226, 227, 0.14)" }}>
             <ImageWithFallback
-              src={thumbnailUrl}
+              src={(thumbnailHeroUrl || thumbnailSeoUrl) ?? undefined}
               alt={article.title}
               className="h-auto w-full object-cover"
               style={{
@@ -328,7 +333,12 @@ export function ArticleDetail() {
               img: ({ node, ...props }) => (
                 <figure className="my-8">
                   <ImageWithFallback
-                    src={toAbsoluteApiUrl((props.src as string) ?? null) ?? (props.src as string)}
+                    src={
+                      toAbsoluteApiUrl((props.src as string) ?? null, {
+                        width: 1200,
+                        quality: 78,
+                      }) ?? (props.src as string)
+                    }
                     alt={props.alt as string}
                     className="w-full h-auto rounded-lg"
                     loading="lazy"
@@ -472,7 +482,11 @@ function MoreArticles({ currentSlug }: { currentSlug: string }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {articles.map((a) => {
-          const thumb = toAbsoluteApiUrl(a.thumbnail_url ?? a.thumbnail ?? null);
+          const thumb = toAbsoluteApiUrl(a.thumbnail_url ?? a.thumbnail ?? null, {
+            width: 300,
+            height: 144,
+            quality: 74,
+          });
           const date = a.published_at ?? a.createdAt ?? new Date().toISOString();
           const time = calculateReadingTime(a.content ?? "");
           return (

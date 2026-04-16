@@ -78,7 +78,10 @@ function FamilyTreeNode({
       >
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9 border" style={{ borderColor: "rgba(62, 207, 178, 0.25)" }}>
-            <AvatarImage src={toAbsoluteApiUrl(node.photo) ?? undefined} alt={node.nama} />
+            <AvatarImage
+              src={toAbsoluteApiUrl(node.photo, { width: 96, height: 96, quality: 80 }) ?? undefined}
+              alt={node.nama}
+            />
             <AvatarFallback style={{ background: "rgba(62, 207, 178, 0.12)", color: "#61eccd", fontWeight: 700 }}>
               {initials || "?"}
             </AvatarFallback>
@@ -369,7 +372,7 @@ export function Structure() {
                   style={{ borderColor: "rgba(62, 207, 178, 0.35)" }}
                 >
                   <AvatarImage
-                    src={toAbsoluteApiUrl(selectedPerson.photo) ?? undefined}
+                    src={toAbsoluteApiUrl(selectedPerson.photo, { width: 192, height: 192, quality: 82 }) ?? undefined}
                     alt={selectedPerson.nama}
                   />
                   <AvatarFallback

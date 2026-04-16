@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { apiRequest, API_URL } from "../lib/api";
+import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { Dialog, DialogContent, DialogOverlay, DialogPortal } from "./ui/dialog";
 import { Skeleton } from "./ui/skeleton";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -10,6 +10,7 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const;
 type GalleryImage = {
   id: string;
   url: string;
+  fullUrl: string;
   src?: string;
   alt?: string | null;
   caption?: string | null;
@@ -28,10 +29,17 @@ export function Gallery() {
         if (res.success && res.data) {
           const normalized = res.data.map((image: GalleryImage) => {
             const src = image.url ?? image.src ?? "";
-            const absoluteSrc = src.startsWith("http") ? src : `${API_URL}/${src.replace(/^\//, "")}`;
+            const absoluteSrc = toAbsoluteApiUrl(src) ?? "";
+            const cardSrc =
+              toAbsoluteApiUrl(src, {
+                width: 400,
+                height: 280,
+                quality: 74,
+              }) ?? absoluteSrc;
             return {
               ...image,
-              url: absoluteSrc,
+              url: cardSrc,
+              fullUrl: absoluteSrc,
               alt: image.alt ?? image.caption ?? "Gallery image",
             };
           });
@@ -166,7 +174,7 @@ export function Gallery() {
                 {selectedImage && (
                   <div className="relative">
                     <ImageWithFallback
-                      src={selectedImage.url}
+                      src={selectedImage.fullUrl}
                       alt={selectedImage.alt || "Full size gallery image"}
                       className="w-full h-auto max-h-[85vh] object-contain"
                       loading="eager"

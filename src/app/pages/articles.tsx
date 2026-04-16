@@ -12,8 +12,12 @@ import { calculateReadingTime, formatDate, type Article } from "../lib/utils";
 function ArticleListItem({ article }: { article: Article }) {
   const authorName = article.author_name ?? article.author ?? "Admin TKITI";
   const publishedAt = article.published_at ?? article.createdAt ?? new Date().toISOString();
-  const thumbnailUrl = toAbsoluteApiUrl(article.thumbnail_url ?? article.thumbnail ?? null);
-  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null);
+  const thumbnailUrl = toAbsoluteApiUrl(article.thumbnail_url ?? article.thumbnail ?? null, {
+    width: 240,
+    height: 170,
+    quality: 74,
+  });
+  const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null, { width: 56, height: 56, quality: 80 });
   const readingTime = calculateReadingTime(article.content ?? "");
   const excerpt = article.excerpt ?? article.subtitle ?? "";
 

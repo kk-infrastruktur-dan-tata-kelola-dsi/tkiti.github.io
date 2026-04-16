@@ -7,7 +7,8 @@ import { useIsMobile } from "./ui/use-mobile";
 import { BackgroundPaths } from "@/app/components/ui/background-paths";
 import tkiti3dSnippet from "@/app/assets/tkiti-3dsvg-snippet.txt?raw";
 
-const SVG3D = lazy(() => import("3dsvg").then((m) => ({ default: m.SVG3D })));
+const load3DModule = () => import("3dsvg");
+const SVG3D = lazy(() => load3DModule().then((m) => ({ default: m.SVG3D })));
 const heroEase = [0.25, 0.46, 0.45, 0.94] as const;
 
 function extractSvgMarkup(source: string): string {
@@ -27,13 +28,43 @@ export function Hero() {
   const svgMarkup = useMemo(() => extractSvgMarkup(tkiti3dSnippet), []);
 
   useEffect(() => {
+    const win = window as Window & {
+      requestIdleCallback?: (callback: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    let fallbackTimerId: ReturnType<typeof setTimeout> | null = null;
+    let idleCallbackId: number | null = null;
+
+    const warmUp = () => {
+      void load3DModule();
+    };
+
+    if (typeof win.requestIdleCallback === "function") {
+      idleCallbackId = win.requestIdleCallback(warmUp);
+    } else {
+      fallbackTimerId = setTimeout(warmUp, 120);
+    }
+
+    return () => {
+      if (idleCallbackId !== null && typeof win.cancelIdleCallback === "function") {
+        win.cancelIdleCallback(idleCallbackId);
+      }
+      if (fallbackTimerId) {
+        clearTimeout(fallbackTimerId);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (reduceMotion) {
       setShow3D(true);
       return;
     }
-    const id = setTimeout(() => setShow3D(true), isMobile ? 1000 : 650);
+    const isMobileViewport = window.innerWidth < 768;
+    const id = setTimeout(() => setShow3D(true), isMobileViewport ? 360 : 220);
     return () => clearTimeout(id);
-  }, [isMobile, reduceMotion]);
+  }, [reduceMotion]);
 
   const subtitle =
     data["hero.subtitle"] ?? "SISTEM INFORMASI · UNIVERSITAS ANDALAS";
@@ -188,7 +219,19 @@ export function Hero() {
             }}
           >
             {show3D && svgMarkup ? (
-              <Suspense fallback={null}>
+              <Suspense
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center">
+                    <img
+                      src={`${import.meta.env.BASE_URL}images/logo.png`}
+                      alt="TKITI 3D loading"
+                      className="h-[48%] w-[48%] object-contain opacity-65"
+                      loading="eager"
+                      decoding="async"
+                    />
+                  </div>
+                }
+              >
                 <SVG3D
                   svg={svgMarkup}
                   smoothness={0.1}
@@ -204,7 +247,17 @@ export function Hero() {
                   height="100%"
                 />
               </Suspense>
-            ) : null}
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <img
+                  src={`${import.meta.env.BASE_URL}images/logo.png`}
+                  alt="TKITI 3D placeholder"
+                  className="h-[48%] w-[48%] object-contain opacity-65"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
