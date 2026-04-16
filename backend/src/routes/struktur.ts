@@ -362,6 +362,51 @@ strukturRoutes.delete('/master/:id', authMiddleware, (c) => {
   return c.json({ success: true, message: 'Role master berhasil dihapus' })
 })
 
+// Auto-reorder: BFS traversal to assign urutan based on tree position
+strukturRoutes.post('/master/reorder', authMiddleware, (c) => {
+  const rows = getMasterRows()
+  if (rows.length === 0) return c.json({ success: true, message: 'Nothing to reorder' })
+
+  // Build tree for BFS
+  const childrenMap = new Map<number | null, MasterNode[]>()
+  for (const row of rows) {
+    const parentKey = row.parentMasterId ?? null
+    const bucket = childrenMap.get(parentKey) ?? []
+    bucket.push(row)
+    childrenMap.set(parentKey, bucket)
+  }
+
+  // BFS from roots → assign urutan 1, 2, 3...
+  const queue: MasterNode[] = [...(childrenMap.get(null) ?? [])]
+  // Sort roots by current urutan to preserve relative order
+  queue.sort((a, b) => a.urutan - b.urutan || a.id - b.id)
+
+  let nextUrutan = 1
+  const visited = new Set<number>()
+
+  while (queue.length > 0) {
+    const node = queue.shift()!
+    if (visited.has(node.id)) continue
+    visited.add(node.id)
+
+    if (node.urutan !== nextUrutan) {
+      db.update(strukturMaster).set({ urutan: nextUrutan }).where(eq(strukturMaster.id, node.id)).run()
+      // Also update anggota that reference this master
+      const memberRows = db.select().from(anggota).where(eq(anggota.masterId, node.id)).all()
+      for (const row of memberRows) {
+        db.update(anggota).set({ urutan: nextUrutan }).where(eq(anggota.id, row.id)).run()
+      }
+    }
+    nextUrutan++
+
+    const children = childrenMap.get(node.id) ?? []
+    children.sort((a, b) => a.urutan - b.urutan || a.id - b.id)
+    queue.push(...children)
+  }
+
+  return c.json({ success: true, message: `Reordered ${nextUrutan - 1} master roles` })
+})
+
 // Compatibility endpoint
 strukturRoutes.get('/template', (c) => c.json({ success: true, data: getMasterRows() }))
 
