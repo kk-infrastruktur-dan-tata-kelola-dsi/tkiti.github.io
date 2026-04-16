@@ -180,8 +180,8 @@ export function Structure() {
     : "";
 
   return (
-    <section id="struktur" className="px-6 py-14">
-      <div className="mx-auto max-w-6xl">
+    <section id="struktur" className="px-4 md:px-6 py-14">
+      <div className="mx-auto w-full max-w-[1440px]">
         <motion.h2
           className="mb-8 text-center tracking-[0.15em]"
           style={{ fontFamily: "JetBrains Mono, monospace", color: "#61eccd" }}
