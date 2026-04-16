@@ -624,6 +624,7 @@ export function AdminStruktur() {
   const [masterRole, setMasterRole] = useState('')
   const [masterSingle, setMasterSingle] = useState(false)
   const [masterDivisi, setMasterDivisi] = useState('')
+  const [masterParentId, setMasterParentId] = useState<number | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [saving, setSaving] = useState(false)
@@ -782,6 +783,7 @@ export function AdminStruktur() {
       setMasterRole(node.role)
       setMasterSingle(node.single)
       setMasterDivisi(node.divisi ?? '')
+      setMasterParentId(node.parentMasterId ?? null)
       setMasterDialogOpen(true)
     },
     [template],
@@ -796,6 +798,7 @@ export function AdminStruktur() {
     setMasterRole('')
     setMasterSingle(false)
     setMasterDivisi('')
+    setMasterParentId(null)
     setMasterDialogOpen(true)
   }, [])
 
@@ -814,7 +817,7 @@ export function AdminStruktur() {
         method: 'PUT',
         body: JSON.stringify({
           role: masterRole.trim(),
-          parentMasterId: node?.parentMasterId ?? null,
+          parentMasterId: masterParentId,
           urutan: node?.urutan ?? 1,
           divisi: masterDivisi || null,
           single: masterSingle,
@@ -823,6 +826,7 @@ export function AdminStruktur() {
       if (res.success) {
         toast.success('Role master diperbarui')
         setMasterDialogOpen(false)
+        await apiRequest('/struktur/master/reorder', { method: 'POST' })
         await fetchData(effectivePeriodeId)
       } else {
         toast.error(res.error ?? 'Gagal menyimpan')
@@ -833,15 +837,16 @@ export function AdminStruktur() {
         method: 'POST',
         body: JSON.stringify({
           role: masterRole.trim(),
-          parentMasterId: null,
+          parentMasterId: masterParentId,
           urutan: template.length + 1,
           divisi: masterDivisi || null,
           single: masterSingle,
         }),
       })
       if (res.success) {
-        toast.success('Role master ditambahkan — drag handle untuk set parent')
+        toast.success('Role master berhasil ditambahkan')
         setMasterDialogOpen(false)
+        await apiRequest('/struktur/master/reorder', { method: 'POST' })
         await fetchData(effectivePeriodeId)
       } else {
         toast.error(res.error ?? 'Gagal menyimpan')
@@ -1073,7 +1078,11 @@ export function AdminStruktur() {
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <div className="mb-3">
           <h2 className="text-sm font-semibold text-gray-700">Struktur Master — Canvas Editor</h2>
-          <p className="text-xs text-gray-400">Drag dari titik biru bawah node → titik biru atas node lain untuk set parent. Hover node untuk edit/hapus.</p>
+          <div className="mt-2 rounded-md bg-blue-50 p-3 text-xs text-blue-700 border border-blue-100 space-y-1.5">
+            <p><strong>Cara Menghubungkan (Set Atasan):</strong> Tarik garis dari <strong>titik biru di bagian bawah</strong> role atasan ke <strong>titik biru di bagian atas</strong> role bawahan.</p>
+            <p><strong>Cara Edit/Hapus:</strong> Arahkan kursor (hover) ke dalam kotak role, lalu klik icon pensil/tempat sampah yang muncul.</p>
+            <p><strong>Alternatif:</strong> Klik tombol "+ Tambah Role" atau edit role untuk mengatur atasan secara langsung tanpa menggunakan canvas.</p>
+          </div>
         </div>
         <ReactFlowProvider>
           <MasterCanvasEditor
@@ -1226,9 +1235,7 @@ export function AdminStruktur() {
           <DialogHeader>
             <DialogTitle>{editingMasterId ? 'Edit Role Master' : 'Tambah Role Master'}</DialogTitle>
             <DialogDescription>
-              {editingMasterId
-                ? 'Edit nama dan properties. Parent diatur via canvas (drag handle).'
-                : 'Buat role baru. Setelah dibuat, drag handle di canvas untuk set parent.'}
+              Isi detail role di bawah. Kamu juga bisa mengatur Parent (Atasan) langsung dari sini, tanpa harus menggunakan canvas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -1253,7 +1260,24 @@ export function AdminStruktur() {
                 <option value="kolaborasi">Kolaborasi</option>
               </select>
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <div className="space-y-1.5">
+              <Label>Parent Role (Atasan)</Label>
+              <select
+                value={masterParentId ?? ''}
+                onChange={(e) => setMasterParentId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+              >
+                <option value="">-- Paling Atas (Tidak Ada Parameter) --</option>
+                {template
+                  .filter((t) => t.id !== editingMasterId)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.role}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700 mt-2">
               <input
                 type="checkbox"
                 checked={masterSingle}
