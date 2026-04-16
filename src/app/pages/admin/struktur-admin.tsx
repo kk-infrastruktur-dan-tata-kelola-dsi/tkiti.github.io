@@ -1,11 +1,10 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Pencil, Plus, Trash2, Upload, User, UserPlus, ZoomIn } from 'lucide-react'
+import { ChevronRight, Pencil, Plus, Save, Trash2, Upload, User, UserPlus, X, ZoomIn } from 'lucide-react'
 import {
   Background,
   Controls,
   ReactFlow,
-  addEdge,
   useEdgesState,
   useNodesState,
   type Connection,
@@ -610,7 +609,6 @@ export function AdminStruktur() {
   const [periodes, setPeriodes] = useState<Periode[]>([])
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [periodeDialogOpen, setPeriodeDialogOpen] = useState(false)
   const [masterDialogOpen, setMasterDialogOpen] = useState(false)
   const [editingPeriodeId, setEditingPeriodeId] = useState<number | null>(null)
@@ -857,20 +855,25 @@ export function AdminStruktur() {
     setConfirmDeleteMasterId(null)
   }
 
-  // ─── Anggota handlers ──────────────────────────────────────────────────────
+  // ─── Anggota sidebar handlers ───────────────────────────────────────────────
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [confirmDeleteAnggotaId, setConfirmDeleteAnggotaId] = useState<number | null>(null)
 
-  function openNew() {
-    if (!effectivePeriodeId) {
-      toast.error('Buat periode terlebih dahulu')
-      return
-    }
+  function openSidebar(role: string, item?: Anggota) {
+    setEditId(item?.id ?? null)
+    setForm({ nama: item?.nama ?? '', role })
+    setPhotoFile(null)
+    setPhotoPreview(item ? (toAbsoluteApiUrl(item.photo) ?? '') : '')
+    setSidebarOpen(true)
+  }
+
+  function closeSidebar() {
+    setSidebarOpen(false)
     setEditId(null)
     setForm(EMPTY_FORM)
     setPhotoFile(null)
     setPhotoPreview('')
-    setDialogOpen(true)
   }
 
   const handleFillSlot = useCallback(
@@ -879,22 +882,14 @@ export function AdminStruktur() {
         toast.error('Buat periode terlebih dahulu')
         return
       }
-      setEditId(null)
-      setForm({ nama: '', role })
-      setPhotoFile(null)
-      setPhotoPreview('')
-      setDialogOpen(true)
+      openSidebar(role)
     },
     [effectivePeriodeId],
   )
 
   const handleAnggotaEdit = useCallback(
     (item: Anggota) => {
-      setEditId(item.id)
-      setForm({ nama: item.nama, role: item.role })
-      setPhotoFile(null)
-      setPhotoPreview(toAbsoluteApiUrl(item.photo) ?? '')
-      setDialogOpen(true)
+      openSidebar(item.role, item)
     },
     [],
   )
@@ -902,14 +897,6 @@ export function AdminStruktur() {
   const handleAnggotaDeleteRequest = useCallback((id: number) => {
     setConfirmDeleteAnggotaId(id)
   }, [])
-
-  function openEdit(item: Anggota) {
-    setEditId(item.id)
-    setForm({ nama: item.nama, role: item.role })
-    setPhotoFile(null)
-    setPhotoPreview(toAbsoluteApiUrl(item.photo) ?? '')
-    setDialogOpen(true)
-  }
 
   function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -945,7 +932,7 @@ export function AdminStruktur() {
 
     if (res.success) {
       toast.success(editId ? 'Anggota diperbarui' : 'Anggota ditambahkan')
-      setDialogOpen(false)
+      closeSidebar()
       await fetchData(effectivePeriodeId)
     } else {
       toast.error(res.error ?? 'Gagal menyimpan')
@@ -962,6 +949,7 @@ export function AdminStruktur() {
     const res = await apiRequest(`/struktur/${id}`, { method: 'DELETE' })
     if (res.success) {
       toast.success('Anggota dihapus')
+      closeSidebar()
       setItems((prev) => prev.filter((item) => item.id !== id))
     } else {
       toast.error(res.error ?? 'Gagal menghapus')
@@ -992,7 +980,7 @@ export function AdminStruktur() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Struktur Organisasi</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Kelola template role dan anggota per periode.</p>
+          <p className="mt-0.5 text-sm text-gray-500">Kelola template role dan anggota per periode via canvas.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={openCreatePeriode}>
@@ -1001,13 +989,13 @@ export function AdminStruktur() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="text-red-600" disabled={resetting || !effectivePeriodeId}>
-                {resetting ? 'Resetting...' : 'Reset Periode Ini'}
+                {resetting ? 'Resetting...' : 'Reset Anggota Periode Ini'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Hapus struktur untuk periode ini?</AlertDialogTitle>
-                <AlertDialogDescription>Data anggota pada periode terpilih akan dihapus.</AlertDialogDescription>
+                <AlertDialogTitle>Hapus semua anggota untuk periode ini?</AlertDialogTitle>
+                <AlertDialogDescription>Data anggota pada periode terpilih akan dihapus. Template role master tetap ada.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
@@ -1017,9 +1005,6 @@ export function AdminStruktur() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button className="gap-2" onClick={openNew}>
-            <Plus className="h-4 w-4" /> Tambah Anggota
-          </Button>
         </div>
       </div>
 
@@ -1093,88 +1078,105 @@ export function AdminStruktur() {
         </ReactFlowProvider>
       </div>
 
-      {/* Anggota Tree Canvas */}
+      {/* Anggota Tree Canvas + Sidebar */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-700">
-              Anggota Periode: {periodes.find((p) => p.id === effectivePeriodeId)?.nama ?? '-'} ({items.length})
-            </h2>
-            <p className="text-xs text-gray-400">Klik slot kosong (garis putus-putus) untuk tambah anggota. Hover node untuk edit/hapus.</p>
-          </div>
-          <Button size="sm" className="gap-1.5" onClick={openNew}>
-            <Plus className="h-3.5 w-3.5" /> Tambah Anggota
-          </Button>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-gray-700">
+            Anggota Periode: {periodes.find((p) => p.id === effectivePeriodeId)?.nama ?? '-'} ({items.length})
+          </h2>
+          <p className="text-xs text-gray-400">Klik slot kosong untuk tambah anggota. Hover node untuk edit/hapus.</p>
         </div>
         {loading ? (
           <p className="py-6 text-center text-sm text-gray-400">Memuat data...</p>
         ) : template.length === 0 ? (
           <p className="py-6 text-center text-sm text-gray-400">Buat template master terlebih dahulu.</p>
         ) : (
-          <ReactFlowProvider>
-            <AnggotaTreeCanvas
-              items={items}
-              template={template}
-              onEdit={handleAnggotaEdit}
-              onDelete={handleAnggotaDeleteRequest}
-              onFillSlot={handleFillSlot}
-            />
-          </ReactFlowProvider>
+          <div className="flex gap-4">
+            {/* Canvas */}
+            <div className={sidebarOpen ? 'flex-1 min-w-0' : 'w-full'}>
+              <ReactFlowProvider>
+                <AnggotaTreeCanvas
+                  items={items}
+                  template={template}
+                  onEdit={handleAnggotaEdit}
+                  onDelete={handleAnggotaDeleteRequest}
+                  onFillSlot={handleFillSlot}
+                />
+              </ReactFlowProvider>
+            </div>
+
+            {/* Sidebar Panel */}
+            {sidebarOpen && (
+              <div className="w-72 shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {editId ? 'Edit Anggota' : 'Tambah Anggota'}
+                  </h3>
+                  <button type="button" onClick={closeSidebar} className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Photo */}
+                  <div className="flex flex-col items-center gap-2">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="" className="h-20 w-20 rounded-full border-2 border-gray-200 object-cover" />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200">
+                        <User className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => fileRef.current?.click()}>
+                      <Upload className="h-3 w-3" /> Upload foto
+                    </Button>
+                  </div>
+
+                  {/* Role (read-only indicator) */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Role</Label>
+                    <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                      <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="truncate">{form.role}</span>
+                    </div>
+                  </div>
+
+                  {/* Nama */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Nama</Label>
+                    <Input
+                      value={form.nama}
+                      onChange={(e) => setForm((prev) => ({ ...prev, nama: e.target.value }))}
+                      placeholder="Masukkan nama"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+                      <Save className="h-3.5 w-3.5" />
+                      {saving ? 'Menyimpan...' : editId ? 'Simpan' : 'Tambah'}
+                    </Button>
+                    {editId && (
+                      <Button
+                        variant="outline"
+                        className="gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setConfirmDeleteAnggotaId(editId)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Hapus anggota ini
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* ─── Dialogs ──────────────────────────────────────────────────────────── */}
-
-      {/* Anggota dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editId ? 'Edit Anggota' : 'Tambah Anggota'}</DialogTitle>
-            <DialogDescription>Pilih role dari template. Parent dan urutan ditentukan otomatis.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="flex items-center gap-4">
-              {photoPreview ? (
-                <img src={photoPreview} alt="" className="h-16 w-16 rounded-full border border-gray-200 object-cover" />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                  <User className="h-6 w-6 text-gray-400" />
-                </div>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileRef.current?.click()}>
-                <Upload className="h-3.5 w-3.5" /> Upload foto
-              </Button>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nama</Label>
-              <Input value={form.nama} onChange={(e) => setForm((prev) => ({ ...prev, nama: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Role</Label>
-              <Input
-                list="role-template-options"
-                value={form.role}
-                onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-                placeholder="Pilih role dari template"
-              />
-              <datalist id="role-template-options">
-                {roleOptions.map((role) => (
-                  <option key={role} value={role} />
-                ))}
-              </datalist>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Batal
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Menyimpan...' : editId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Periode dialog */}
       <Dialog open={periodeDialogOpen} onOpenChange={setPeriodeDialogOpen}>
