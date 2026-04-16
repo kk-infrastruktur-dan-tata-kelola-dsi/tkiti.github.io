@@ -34,7 +34,7 @@ type StrukturTreeNode = StrukturRow & { urutan: number; children: StrukturTreeNo
 const DEFAULT_MASTER = [
   { role: 'Ketua Kelompok Keilmuan', parentRole: null, urutan: 1, divisi: 'kepemimpinan', single: true },
   { role: 'Dosen / Anggota Kelompok Keilmuan', parentRole: 'Ketua Kelompok Keilmuan', urutan: 2, divisi: 'kepemimpinan', single: false },
-  { role: 'Koordinator Asisten', parentRole: 'Dosen / Anggota Kelompok Keilmuan', urutan: 3, divisi: 'anggota', single: true },
+  { role: 'Koordinator Asisten', parentRole: 'Ketua Kelompok Keilmuan', urutan: 3, divisi: 'anggota', single: true },
   { role: 'Bendahara', parentRole: 'Koordinator Asisten', urutan: 4, divisi: 'anggota', single: true },
   { role: 'Sekretaris', parentRole: 'Koordinator Asisten', urutan: 5, divisi: 'anggota', single: true },
   { role: 'Koordinator Divisi Penelitian dan Pengembangan', parentRole: 'Koordinator Asisten', urutan: 6, divisi: 'kolaborasi', single: true },
