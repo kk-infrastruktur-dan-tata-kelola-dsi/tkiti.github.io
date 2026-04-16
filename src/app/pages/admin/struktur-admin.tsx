@@ -1,6 +1,6 @@
-import { type ChangeEvent, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, GripVertical, Pencil, Plus, Trash2, Upload, User, X, ZoomIn } from 'lucide-react'
+import { Pencil, Plus, Trash2, Upload, User, UserPlus, ZoomIn } from 'lucide-react'
 import {
   Background,
   Controls,
@@ -169,7 +169,304 @@ function MasterCustomNode({ data, id }: NodeProps<Node<MasterNodeData>>) {
   )
 }
 
-const nodeTypes = { masterNode: MasterCustomNode }
+const masterNodeTypes = { masterNode: MasterCustomNode }
+
+// ─── Anggota Tree Node ───────────────────────────────────────────────────────
+
+type AnggotaNodeData = {
+  anggota: Anggota | null // null = empty slot
+  role: string
+  divisi: string | null
+  single: boolean
+  onEdit: (item: Anggota) => void
+  onDelete: (id: number) => void
+  onFillSlot: (role: string) => void
+  photoUrl: string | null
+}
+
+function AnggotaCustomNode({ data }: NodeProps<Node<AnggotaNodeData>>) {
+  const isEmpty = !data.anggota
+  const divisiColor: Record<string, string> = {
+    kepemimpinan: 'border-amber-300 bg-amber-50',
+    anggota: 'border-blue-300 bg-blue-50',
+    kolaborasi: 'border-emerald-300 bg-emerald-50',
+  }
+  const borderClass = data.divisi ? divisiColor[data.divisi] ?? 'border-gray-200 bg-white' : 'border-gray-200 bg-white'
+
+  if (isEmpty) {
+    return (
+      <div className="group relative" style={{ width: 200 }}>
+        <Handle type="target" position={Position.Top} className="!h-3 !w-3 !border-2 !border-white !bg-gray-300" />
+        <button
+          type="button"
+          onClick={() => data.onFillSlot(data.role)}
+          className="flex w-full items-center gap-2.5 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-2.5 transition-colors hover:border-blue-400 hover:bg-blue-50"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-gray-300">
+            <UserPlus className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="min-w-0 text-left">
+            <p className="truncate text-[10px] font-medium uppercase text-gray-400">{data.role}</p>
+            <p className="text-xs text-gray-400">Klik untuk isi</p>
+          </div>
+        </button>
+        <Handle type="source" position={Position.Bottom} className="!h-3 !w-3 !border-2 !border-white !bg-gray-300" />
+      </div>
+    )
+  }
+
+  const item = data.anggota!
+  const initials = item.nama
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  return (
+    <div className={`group relative rounded-lg border-2 px-3 py-2.5 shadow-sm transition-shadow hover:shadow-md ${borderClass}`} style={{ width: 200 }}>
+      <Handle type="target" position={Position.Top} className="!h-3 !w-3 !border-2 !border-white !bg-blue-500" />
+
+      <div className="flex items-center gap-2.5">
+        {data.photoUrl ? (
+          <img src={data.photoUrl} alt={item.nama} className="h-9 w-9 rounded-full border border-gray-200 object-cover" />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-xs font-bold text-blue-600">
+            {initials || '?'}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-medium uppercase text-gray-400">{item.role}</p>
+          <p className="truncate text-sm font-semibold text-gray-900">{item.nama}</p>
+        </div>
+      </div>
+
+      {/* Hover actions */}
+      <div className="absolute -right-1 -top-1 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          className="rounded-full bg-white p-1 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+          onClick={(e) => { e.stopPropagation(); data.onEdit(item) }}
+        >
+          <Pencil className="h-3 w-3 text-gray-500" />
+        </button>
+        <button
+          type="button"
+          className="rounded-full bg-white p-1 shadow-sm ring-1 ring-gray-200 hover:bg-red-50"
+          onClick={(e) => { e.stopPropagation(); data.onDelete(item.id) }}
+        >
+          <Trash2 className="h-3 w-3 text-red-400" />
+        </button>
+      </div>
+
+      <Handle type="source" position={Position.Bottom} className="!h-3 !w-3 !border-2 !border-white !bg-blue-500" />
+    </div>
+  )
+}
+
+const anggotaNodeTypes = { anggotaNode: AnggotaCustomNode }
+
+// ─── Anggota Tree Canvas ─────────────────────────────────────────────────────
+
+const ANGGOTA_NODE_W = 200
+const ANGGOTA_NODE_H = 70
+
+function AnggotaTreeCanvas({
+  items,
+  template,
+  onEdit,
+  onDelete,
+  onFillSlot,
+}: {
+  items: Anggota[]
+  template: TemplateNode[]
+  onEdit: (item: Anggota) => void
+  onDelete: (id: number) => void
+  onFillSlot: (role: string) => void
+}) {
+  const { fitView } = useReactFlow()
+
+  // Build nodes: one per master role slot. For multi roles, show filled + one empty.
+  const { treeNodes, treeEdges } = useMemo(() => {
+    const nodes: Node<AnggotaNodeData>[] = []
+    const edges: Edge[] = []
+    let emptyCounter = 0
+
+    for (const master of template) {
+      const members = items.filter((m) => m.role === master.role)
+      const parentMaster = master.parentMasterId ? template.find((t) => t.id === master.parentMasterId) : null
+
+      if (members.length === 0) {
+        // Empty slot
+        const nodeId = `empty-${master.id}-${emptyCounter++}`
+        nodes.push({
+          id: nodeId,
+          type: 'anggotaNode',
+          data: {
+            anggota: null,
+            role: master.role,
+            divisi: master.divisi,
+            single: master.single,
+            onEdit,
+            onDelete,
+            onFillSlot,
+            photoUrl: null,
+          },
+          position: { x: 0, y: 0 },
+        })
+        // Edge from parent member or parent empty slot
+        if (parentMaster) {
+          const parentMembers = items.filter((m) => m.role === parentMaster.role)
+          const parentNodeId = parentMembers.length > 0 ? `member-${parentMembers[0].id}` : `empty-${parentMaster.id}-0`
+          // Find actual parent node id (may have different empty counter)
+          const existingParent = nodes.find((n) => n.id === parentNodeId || (n.id.startsWith(`empty-${parentMaster.id}-`) && !n.data.anggota))
+          if (existingParent) {
+            edges.push({ id: `e-${existingParent.id}-${nodeId}`, source: existingParent.id, target: nodeId, type: 'smoothstep', style: { stroke: '#d1d5db', strokeWidth: 1.5, strokeDasharray: '4 4' } })
+          }
+        }
+      } else {
+        for (const member of members) {
+          const nodeId = `member-${member.id}`
+          nodes.push({
+            id: nodeId,
+            type: 'anggotaNode',
+            data: {
+              anggota: member,
+              role: master.role,
+              divisi: master.divisi,
+              single: master.single,
+              onEdit,
+              onDelete,
+              onFillSlot,
+              photoUrl: toAbsoluteApiUrl(member.photo),
+            },
+            position: { x: 0, y: 0 },
+          })
+          // Edge from parent
+          if (member.parentId) {
+            const parentNodeId = `member-${member.parentId}`
+            if (nodes.find((n) => n.id === parentNodeId)) {
+              edges.push({ id: `e-${parentNodeId}-${nodeId}`, source: parentNodeId, target: nodeId, type: 'smoothstep', style: { stroke: '#94a3b8', strokeWidth: 2 } })
+            }
+          } else if (parentMaster) {
+            // Connect to first parent member
+            const parentMembers = items.filter((m) => m.role === parentMaster.role)
+            if (parentMembers.length > 0) {
+              const pId = `member-${parentMembers[0].id}`
+              if (nodes.find((n) => n.id === pId)) {
+                edges.push({ id: `e-${pId}-${nodeId}`, source: pId, target: nodeId, type: 'smoothstep', style: { stroke: '#94a3b8', strokeWidth: 2 } })
+              }
+            }
+          }
+        }
+
+        // Add empty slot for multi roles
+        if (!master.single) {
+          const emptyId = `empty-${master.id}-${emptyCounter++}`
+          nodes.push({
+            id: emptyId,
+            type: 'anggotaNode',
+            data: {
+              anggota: null,
+              role: master.role,
+              divisi: master.divisi,
+              single: master.single,
+              onEdit,
+              onDelete,
+              onFillSlot,
+              photoUrl: null,
+            },
+            position: { x: 0, y: 0 },
+          })
+          // Connect to parent
+          if (parentMaster) {
+            const parentMembers = items.filter((m) => m.role === parentMaster.role)
+            if (parentMembers.length > 0) {
+              edges.push({ id: `e-member-${parentMembers[0].id}-${emptyId}`, source: `member-${parentMembers[0].id}`, target: emptyId, type: 'smoothstep', style: { stroke: '#d1d5db', strokeWidth: 1.5, strokeDasharray: '4 4' } })
+            }
+          }
+        }
+      }
+    }
+
+    return { treeNodes: nodes, treeEdges: edges }
+  }, [items, template, onEdit, onDelete, onFillSlot])
+
+  // Auto-layout with dagre
+  const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(() => {
+    const g = new dagre.graphlib.Graph()
+    g.setDefaultEdgeLabel(() => ({}))
+    g.setGraph({ rankdir: 'TB', ranksep: 70, nodesep: 30 })
+    for (const node of treeNodes) g.setNode(node.id, { width: ANGGOTA_NODE_W, height: ANGGOTA_NODE_H })
+    for (const edge of treeEdges) g.setEdge(edge.source, edge.target)
+    dagre.layout(g)
+    return {
+      nodes: treeNodes.map((node) => {
+        const pos = g.node(node.id)
+        return { ...node, position: pos ? { x: pos.x - ANGGOTA_NODE_W / 2, y: pos.y - ANGGOTA_NODE_H / 2 } : { x: 0, y: 0 } }
+      }),
+      edges: treeEdges,
+    }
+  }, [treeNodes, treeEdges])
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges)
+
+  useEffect(() => {
+    setNodes(layoutedNodes)
+    setEdges(layoutedEdges)
+    setTimeout(() => fitView({ padding: 0.15 }), 50)
+  }, [layoutedNodes, layoutedEdges])
+
+  return (
+    <div className="relative h-[500px] w-full rounded-lg border border-gray-200 bg-gray-50">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={anggotaNodeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.15 }}
+        proOptions={{ hideAttribution: true }}
+        className="rounded-lg"
+        nodesDraggable={false}
+        nodesConnectable={false}
+        deleteKeyCode={null}
+      >
+        <Background gap={16} size={1} color="#e5e7eb" />
+        <Controls showInteractive={false} />
+      </ReactFlow>
+
+      {/* Floating toolbar */}
+      <div className="absolute left-3 top-3 z-10 flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => fitView({ padding: 0.15 })}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+        >
+          <ZoomIn className="h-3.5 w-3.5" /> Fit
+        </button>
+      </div>
+
+      {/* Info */}
+      <div className="absolute bottom-3 left-3 z-10 flex gap-2 rounded-lg border border-gray-200 bg-white/90 px-3 py-1.5 text-[10px] backdrop-blur-sm">
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-amber-400" /> Kepemimpinan
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-blue-400" /> Anggota
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" /> Kolaborasi
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2 w-4 rounded border border-dashed border-gray-400" /> Slot kosong
+        </span>
+      </div>
+    </div>
+  )
+}
 
 // ─── Canvas Editor ───────────────────────────────────────────────────────────
 
@@ -255,7 +552,7 @@ function MasterCanvasEditor({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
-        nodeTypes={nodeTypes}
+        nodeTypes={masterNodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         proOptions={{ hideAttribution: true }}
@@ -562,6 +859,8 @@ export function AdminStruktur() {
 
   // ─── Anggota handlers ──────────────────────────────────────────────────────
 
+  const [confirmDeleteAnggotaId, setConfirmDeleteAnggotaId] = useState<number | null>(null)
+
   function openNew() {
     if (!effectivePeriodeId) {
       toast.error('Buat periode terlebih dahulu')
@@ -573,6 +872,36 @@ export function AdminStruktur() {
     setPhotoPreview('')
     setDialogOpen(true)
   }
+
+  const handleFillSlot = useCallback(
+    (role: string) => {
+      if (!effectivePeriodeId) {
+        toast.error('Buat periode terlebih dahulu')
+        return
+      }
+      setEditId(null)
+      setForm({ nama: '', role })
+      setPhotoFile(null)
+      setPhotoPreview('')
+      setDialogOpen(true)
+    },
+    [effectivePeriodeId],
+  )
+
+  const handleAnggotaEdit = useCallback(
+    (item: Anggota) => {
+      setEditId(item.id)
+      setForm({ nama: item.nama, role: item.role })
+      setPhotoFile(null)
+      setPhotoPreview(toAbsoluteApiUrl(item.photo) ?? '')
+      setDialogOpen(true)
+    },
+    [],
+  )
+
+  const handleAnggotaDeleteRequest = useCallback((id: number) => {
+    setConfirmDeleteAnggotaId(id)
+  }, [])
 
   function openEdit(item: Anggota) {
     setEditId(item.id)
@@ -764,56 +1093,33 @@ export function AdminStruktur() {
         </ReactFlowProvider>
       </div>
 
-      {/* Anggota list */}
+      {/* Anggota Tree Canvas */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">
-          Data Anggota Periode: {periodes.find((p) => p.id === effectivePeriodeId)?.nama ?? '-'} ({items.length})
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-700">
+              Anggota Periode: {periodes.find((p) => p.id === effectivePeriodeId)?.nama ?? '-'} ({items.length})
+            </h2>
+            <p className="text-xs text-gray-400">Klik slot kosong (garis putus-putus) untuk tambah anggota. Hover node untuk edit/hapus.</p>
+          </div>
+          <Button size="sm" className="gap-1.5" onClick={openNew}>
+            <Plus className="h-3.5 w-3.5" /> Tambah Anggota
+          </Button>
+        </div>
         {loading ? (
           <p className="py-6 text-center text-sm text-gray-400">Memuat data...</p>
-        ) : items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-400">Belum ada data struktur pada periode ini.</p>
+        ) : template.length === 0 ? (
+          <p className="py-6 text-center text-sm text-gray-400">Buat template master terlebih dahulu.</p>
         ) : (
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 rounded border border-gray-100 px-3 py-2">
-                {item.photo ? (
-                  <img src={toAbsoluteApiUrl(item.photo) ?? ''} alt={item.nama} className="h-9 w-9 rounded-full object-cover" />
-                ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200">
-                    <User className="h-4 w-4 text-gray-400" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-gray-900">{item.nama}</p>
-                  <p className="truncate text-xs text-gray-500">{item.role}</p>
-                </div>
-                <Badge variant="secondary">parent: {item.parentId ?? 'root'}</Badge>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus anggota?</AlertDialogTitle>
-                      <AlertDialogDescription>{item.nama} akan dihapus permanen.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDelete(item.id)}>
-                        Hapus
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            ))}
-          </div>
+          <ReactFlowProvider>
+            <AnggotaTreeCanvas
+              items={items}
+              template={template}
+              onEdit={handleAnggotaEdit}
+              onDelete={handleAnggotaDeleteRequest}
+              onFillSlot={handleFillSlot}
+            />
+          </ReactFlowProvider>
         )}
       </div>
 
@@ -969,6 +1275,30 @@ export function AdminStruktur() {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={confirmDeleteMaster}>
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete anggota confirmation */}
+      <AlertDialog open={confirmDeleteAnggotaId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteAnggotaId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus anggota?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {items.find((i) => i.id === confirmDeleteAnggotaId)?.nama ?? 'Anggota'} akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={async () => {
+                if (confirmDeleteAnggotaId) await handleDelete(confirmDeleteAnggotaId)
+                setConfirmDeleteAnggotaId(null)
+              }}
+            >
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
