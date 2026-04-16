@@ -101,26 +101,73 @@ function FamilyTreeNode({
       </motion.div>
 
       {node.children.length > 0 && (
-        <>
-          <div className="h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-          <ul className="relative flex flex-nowrap items-start justify-center gap-x-6 pt-6">
-            {node.children.length > 1 && (
-              <div
-                className="absolute left-[50%] top-0 h-px -translate-x-1/2"
-                style={{
-                  width: `calc(100% - 200px)`,
-                  background: "rgba(62, 207, 178, 0.35)",
-                }}
-              />
-            )}
-            {node.children.map((child, index) => (
-              <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
-                <div className="absolute -top-6 h-6 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
-                <FamilyTreeNode node={child} onPersonClick={onPersonClick} />
-              </li>
-            ))}
-          </ul>
-        </>
+        (() => {
+          const isKetua = node.role.toLowerCase().includes("ketua");
+          const dosens = isKetua ? node.children.filter(c => c.role.toLowerCase().includes("dosen")) : [];
+          const others = isKetua ? node.children.filter(c => !c.role.toLowerCase().includes("dosen")) : [];
+
+          // SPLIT TIER RENDERING (KETUA)
+          if (dosens.length > 0 && others.length > 0) {
+            return (
+              <div className="relative flex flex-col items-center">
+                <div className="h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                
+                {/* Dosen Tier */}
+                <ul className="relative flex flex-nowrap items-start justify-center gap-x-6 pt-6 pb-2">
+                  {dosens.length > 1 && (
+                    <div className="absolute left-[50%] top-0 h-px -translate-x-1/2" style={{ width: `calc(100% - 200px)`, background: "rgba(62, 207, 178, 0.35)" }} />
+                  )}
+                  {dosens.map((child, index) => (
+                    <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
+                      <div className="absolute -top-6 h-6 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                      <FamilyTreeNode node={child} onPersonClick={onPersonClick} />
+                    </li>
+                  ))}
+                  
+                  {/* Central connector string passing through/behind Dosen layer safely */}
+                  <div className="absolute left-[50%] top-0 bottom-[-8px] w-px -translate-x-1/2 -z-10" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                </ul>
+
+                {/* Others / Koord Tier */}
+                <ul className="relative flex flex-nowrap items-start justify-center gap-x-6 pt-6">
+                  {others.length > 1 && (
+                    <div className="absolute left-[50%] top-0 h-px -translate-x-1/2" style={{ width: `calc(100% - 200px)`, background: "rgba(62, 207, 178, 0.35)" }} />
+                  )}
+                  {others.map((child, index) => (
+                    <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
+                      <div className="absolute -top-6 h-6 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                      <FamilyTreeNode node={child} onPersonClick={onPersonClick} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          }
+
+          // DEFAULT RENDERING
+          return (
+            <>
+              <div className="h-5 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+              <ul className="relative flex flex-nowrap items-start justify-center gap-x-6 pt-6">
+                {node.children.length > 1 && (
+                  <div
+                    className="absolute left-[50%] top-0 h-px -translate-x-1/2"
+                    style={{
+                      width: `calc(100% - 200px)`,
+                      background: "rgba(62, 207, 178, 0.35)",
+                    }}
+                  />
+                )}
+                {node.children.map((child, index) => (
+                  <li key={`${child.role}-${index}`} className="relative flex flex-col items-center">
+                    <div className="absolute -top-6 h-6 w-px" style={{ background: "rgba(62, 207, 178, 0.35)" }} />
+                    <FamilyTreeNode node={child} onPersonClick={onPersonClick} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          );
+        })()
       )}
     </li>
   );

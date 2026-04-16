@@ -397,7 +397,12 @@ function AnggotaTreeCanvas({
     g.setDefaultEdgeLabel(() => ({}))
     g.setGraph({ rankdir: 'TB', ranksep: 70, nodesep: 30 })
     for (const node of treeNodes) g.setNode(node.id, { width: ANGGOTA_NODE_W, height: ANGGOTA_NODE_H })
-    for (const edge of treeEdges) g.setEdge(edge.source, edge.target)
+    for (const edge of treeEdges) {
+      const targetNode = treeNodes.find(n => n.id === edge.target)
+      const isKoord = targetNode?.data?.role?.toLowerCase().includes('koordinator asisten')
+      const targetMinLen = isKoord ? 2 : 1
+      g.setEdge(edge.source, edge.target, { minlen: targetMinLen })
+    }
     dagre.layout(g)
     return {
       nodes: treeNodes.map((node) => {
