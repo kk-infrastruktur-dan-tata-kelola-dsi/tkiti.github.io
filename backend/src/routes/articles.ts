@@ -7,6 +7,11 @@ import { deleteFile, saveFile, validateImage } from '../lib/upload.js'
 
 export const articleRoutes = new Hono()
 
+const SITE_NAME = 'Laboratorium TKITI'
+const FRONTEND_SITE_URL = (process.env.FRONTEND_SITE_URL ?? process.env.FRONTEND_URL ?? 'https://tkiti.tech').replace(/\/$/, '')
+const DEFAULT_SHARE_DESCRIPTION = 'Artikel dan tulisan terbaru dari tim laboratorium TKITI tentang infrastruktur teknologi informasi, riset, dan pengembangan.'
+const DEFAULT_SHARE_IMAGE = `${FRONTEND_SITE_URL}/images/og-home.png`
+
 // In-memory rate limit untuk endpoint like
 // key: "<ip>:<articleId>", value: timestamp terakhir like
 const likeMap = new Map<string, number>()
@@ -59,6 +64,35 @@ function cleanupLikeMapIfNeeded(): void {
       console.log(`[LikeMap] Force cleanup: removed ${toDelete.length + deleted} entries`)
     }
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function normalizeDescription(value?: string | null): string {
+  const cleaned = value?.replace(/\s+/g, ' ').trim()
+  if (!cleaned) return DEFAULT_SHARE_DESCRIPTION
+  if (cleaned.length <= 220) return cleaned
+  return `${cleaned.slice(0, 217)}...`
+}
+
+function toAbsoluteShareImage(path: string | null | undefined, apiOrigin: string): string {
+  if (!path) return DEFAULT_SHARE_IMAGE
+  if (/^https?:\/\//i.test(path)) return path
+
+  const normalized = path.trim().replace(/^\/+/, '')
+  const encoded = normalized
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+
+  return `${apiOrigin}/${encoded}`
 }
 
 function getClientIp(c: { req: { header: (name: string) => string | undefined } }): string {
@@ -144,7 +178,76 @@ articleRoutes.post('/upload-thumbnail', authMiddleware, async (c) => {
   return c.json({ success: true, data: { path } }, 201)
 })
 
-// GET /articles/:slug
+// GET /articles/share/:slug
+articleRoutes.get('/share/:slug', (c) => {
+  const slug = c.req.param('slug')
+  const article = db
+    .select({
+      slug: articles.slug,
+      title: articles.title,
+      excerpt: articles.excerpt,
+      thumbnail: articles.thumbnail,
+      published: articles.published,
+      createdAt: articles.createdAt,
+      updatedAt: articles.updatedAt,
+    })
+    .from(articles)
+    .where(eq(articles.slug, slug))
+    .get()
+
+  const publicArticle = article?.published ? article : null
+
+  const redirectUrl = publicArticle
+    ? `${FRONTEND_SITE_URL}/article/${encodeURIComponent(publicArticle.slug)}`
+    : `${FRONTEND_SITE_URL}/article`
+
+  const ogTitle = publicArticle?.title
+    ? `${publicArticle.title} | ${SITE_NAME}`
+    : `${SITE_NAME} | Artikel`
+  const ogDescription = normalizeDescription(publicArticle?.excerpt)
+  const ogImage = toAbsoluteShareImage(publicArticle?.thumbnail, new URL(c.req.url).origin)
+  const createdAt = publicArticle?.createdAt ? new Date(publicArticle.createdAt) : null
+  const updatedAt = publicArticle?.updatedAt ? new Date(publicArticle.updatedAt) : null
+  const publishedTime = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toISOString() : null
+  const modifiedTime = updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt.toISOString() : null
+
+  c.header('X-Robots-Tag', 'noindex, nofollow')
+
+  return c.html(
+    `<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(ogTitle)}</title>
+    <meta name="description" content="${escapeHtml(ogDescription)}" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="${escapeHtml(redirectUrl)}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="${escapeHtml(SITE_NAME)}" />
+    <meta property="og:url" content="${escapeHtml(redirectUrl)}" />
+    <meta property="og:title" content="${escapeHtml(ogTitle)}" />
+    <meta property="og:description" content="${escapeHtml(ogDescription)}" />
+    <meta property="og:image" content="${escapeHtml(ogImage)}" />
+    <meta property="og:image:secure_url" content="${escapeHtml(ogImage)}" />
+    <meta property="og:image:alt" content="${escapeHtml(`Thumbnail artikel: ${publicArticle?.title ?? SITE_NAME}`)}" />
+    ${publishedTime ? `<meta property="article:published_time" content="${escapeHtml(publishedTime)}" />` : ''}
+    ${modifiedTime ? `<meta property="article:modified_time" content="${escapeHtml(modifiedTime)}" />` : ''}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${escapeHtml(redirectUrl)}" />
+    <meta name="twitter:title" content="${escapeHtml(ogTitle)}" />
+    <meta name="twitter:description" content="${escapeHtml(ogDescription)}" />
+    <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
+    <meta name="twitter:image:alt" content="${escapeHtml(`Thumbnail artikel: ${publicArticle?.title ?? SITE_NAME}`)}" />
+    <meta http-equiv="refresh" content="0;url=${escapeHtml(redirectUrl)}" />
+  </head>
+  <body>
+    <script>window.location.replace(${JSON.stringify(redirectUrl)});</script>
+    <p>Mengarahkan ke <a href="${escapeHtml(redirectUrl)}">${escapeHtml(redirectUrl)}</a>...</p>
+  </body>
+</html>`,
+  )
+})
+
 articleRoutes.get('/:slug', (c) => {
   const slug = c.req.param('slug')
   const article = db.select().from(articles).where(eq(articles.slug, slug)).get()

@@ -5,6 +5,7 @@ interface SEOProps {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   url?: string;
   type?: "website" | "article";
   publishedTime?: string;
@@ -14,15 +15,27 @@ interface SEOProps {
 
 const DEFAULT_TITLE = "Lab TKITI — Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi";
 const DEFAULT_DESCRIPTION = "Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi — Fokus pada riset, pengembangan, dan implementasi teknologi informasi di Departemen Sistem Informasi, Fakultas Teknologi Informasi, Universitas Andalas.";
-const DEFAULT_IMAGE = `${import.meta.env.BASE_URL}images/logo.png`;
+const DEFAULT_IMAGE = `${import.meta.env.BASE_URL}images/og-home.png`;
+const DEFAULT_IMAGE_ALT = "Tampilan awal website Laboratorium TKITI";
+const FAVICON_IMAGE = `${import.meta.env.BASE_URL}images/logo.png`;
 const DEFAULT_URL = SITE_URL;
 const SITE_NAME = "Laboratorium TKITI";
 const TWITTER_HANDLE = "@lab_TATI";
+
+function detectImageMimeType(imageUrl: string): string {
+  const cleanUrl = imageUrl.split("?")[0].toLowerCase();
+  if (cleanUrl.endsWith(".jpg") || cleanUrl.endsWith(".jpeg")) return "image/jpeg";
+  if (cleanUrl.endsWith(".webp")) return "image/webp";
+  if (cleanUrl.endsWith(".gif")) return "image/gif";
+  if (cleanUrl.endsWith(".svg")) return "image/svg+xml";
+  return "image/png";
+}
 
 export function SEO({
   title,
   description,
   image,
+  imageAlt,
   url,
   type = "website",
   publishedTime,
@@ -32,8 +45,11 @@ export function SEO({
   const seoTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   const seoDescription = description || DEFAULT_DESCRIPTION;
   const seoImage = image || DEFAULT_IMAGE;
+  const isDefaultImage = !image;
   const seoUrl = url ? (url.startsWith("http") ? url : `${DEFAULT_URL}${url.startsWith("/") ? url : `/${url}`}`) : DEFAULT_URL;
   const fullImageUrl = seoImage.startsWith("http") ? seoImage : `${DEFAULT_URL}${seoImage}`;
+  const imageMimeType = detectImageMimeType(fullImageUrl);
+  const resolvedImageAlt = imageAlt || (type === "article" && title ? `Thumbnail artikel: ${title}` : DEFAULT_IMAGE_ALT);
 
   // JSON-LD Structured Data for Organization
   const organizationSchema = {
@@ -135,10 +151,10 @@ export function SEO({
       <meta property="og:description" content={seoDescription} />
       <meta property="og:image" content={fullImageUrl} />
       <meta property="og:image:secure_url" content={fullImageUrl} />
-      <meta property="og:image:type" content="image/png" />
-      <meta property="og:image:alt" content="Logo Laboratorium TKITI" />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
+      <meta property="og:image:type" content={imageMimeType} />
+      <meta property="og:image:alt" content={resolvedImageAlt} />
+      {isDefaultImage && <meta property="og:image:width" content="1200" />}
+      {isDefaultImage && <meta property="og:image:height" content="630" />}
       <meta property="og:site_name" content={SITE_NAME} />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
@@ -149,12 +165,13 @@ export function SEO({
       <meta name="twitter:title" content={seoTitle} />
       <meta name="twitter:description" content={seoDescription} />
       <meta name="twitter:image" content={fullImageUrl} />
+      <meta name="twitter:image:alt" content={resolvedImageAlt} />
       {TWITTER_HANDLE && <meta name="twitter:creator" content={TWITTER_HANDLE} />}
       {TWITTER_HANDLE && <meta name="twitter:site" content={TWITTER_HANDLE} />}
 
       {/* Favicon */}
-      <link rel="icon" type="image/png" href={DEFAULT_IMAGE} />
-      <link rel="apple-touch-icon" href={DEFAULT_IMAGE} />
+      <link rel="icon" type="image/png" href={FAVICON_IMAGE} />
+      <link rel="apple-touch-icon" href={FAVICON_IMAGE} />
 
       {/* Theme Color */}
       <meta name="theme-color" content="#3ECFB2" />

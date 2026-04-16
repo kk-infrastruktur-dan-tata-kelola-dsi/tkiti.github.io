@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { apiRequest, toAbsoluteApiUrl } from "../lib/api";
+import { API_URL, apiRequest, toAbsoluteApiUrl } from "../lib/api";
 import { ReadingProgressBar } from "../components/reading-progress-bar";
 import { LikeButton } from "../components/like-button";
 import { ShareButton } from "../components/share-button";
@@ -93,6 +93,7 @@ export function ArticleDetail() {
   const thumbnailRaw = article.thumbnail_url ?? article.thumbnail ?? null;
   const thumbnailUrl = toAbsoluteApiUrl(thumbnailRaw);
   const authorAvatar = toAbsoluteApiUrl(article.author_avatar ?? null);
+  const shareUrl = `${API_URL}/articles/share/${encodeURIComponent(article.slug)}`;
 
   return (
     <>
@@ -100,6 +101,7 @@ export function ArticleDetail() {
         title={article.title}
         description={article.subtitle || article.excerpt || ""}
         image={thumbnailUrl || undefined}
+        imageAlt={`Thumbnail artikel: ${article.title}`}
         url={`/article/${article.slug}`}
         type="article"
         publishedTime={publishedAt}
@@ -380,7 +382,11 @@ export function ArticleDetail() {
           <div className="lg:hidden">
             <LikeButton articleId={article.id} initialLikes={article.likes} />
           </div>
-          <ShareButton title={article.title} description={article.subtitle || article.excerpt || undefined} />
+          <ShareButton
+            title={article.title}
+            description={article.subtitle || article.excerpt || undefined}
+            url={shareUrl}
+          />
         </div>
 
         {/* Author Card */}
