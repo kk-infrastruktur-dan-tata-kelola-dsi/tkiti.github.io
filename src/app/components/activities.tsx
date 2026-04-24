@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { useContent } from "../hooks/useContent";
+import { NeonGlobe } from "./neon-globe";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -35,7 +36,7 @@ export function Activities() {
   return (
     <section id="kegiatan" className="py-10 px-6 max-w-6xl mx-auto">
       <motion.div
-        className="flex justify-between items-end mb-16"
+        className="flex justify-between items-end mb-12"
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -44,10 +45,7 @@ export function Activities() {
         <div>
           <motion.h2
             className="tracking-[0.15em] mb-4"
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              color: '#61eccd',
-            }}
+            style={{ fontFamily: 'JetBrains Mono, monospace', color: '#61eccd' }}
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -57,10 +55,7 @@ export function Activities() {
           </motion.h2>
           <motion.h3
             className="font-bold"
-            style={{
-              fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '36px',
-            }}
+            style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '36px' }}
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -71,10 +66,7 @@ export function Activities() {
         </div>
         <motion.div
           className="hidden md:block text-xs text-right opacity-40"
-          style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            color: '#bbcac4',
-          }}
+          style={{ fontFamily: 'JetBrains Mono, monospace', color: '#bbcac4' }}
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 0.4 }}
           viewport={{ once: true }}
@@ -85,80 +77,97 @@ export function Activities() {
         </motion.div>
       </motion.div>
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
-        }}
-      >
-        {activities.map((activity) => (
-          <motion.div
-            key={activity.id}
-            className="p-8 group hover:bg-[#61eccd]/5 transition-colors duration-500 relative overflow-hidden"
-            style={{
-              background: 'rgba(13, 14, 15, 0.6)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(62, 207, 178, 0.15)',
-            }}
-            variants={{
-              hidden: { opacity: 0, y: 40 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
-            }}
-            whileHover={{ y: -5, borderColor: 'rgba(62, 207, 178, 0.35)' }}
-          >
-            <div
-              className="absolute top-0 right-0 p-4 opacity-30"
-              style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '10px',
-                color: '#61eccd',
-              }}
-            >
-              {activity.id}
-            </div>
+      {/* Globe left + capabilities right */}
+      <div className="flex flex-col lg:flex-row gap-10 lg:gap-12 items-center lg:items-start">
 
-            <span
-              className="material-symbols-outlined mb-6 group-hover:scale-110 transition-transform block"
-              style={{
-                fontSize: '36px',
-                color: '#61eccd',
-              }}
-            >
-              {activity.icon}
-            </span>
+        {/* Globe */}
+        <motion.div
+          className="shrink-0"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.8, ease }}
+        >
+          <NeonGlobe size={420} />
+        </motion.div>
 
-            <h4
-              className="font-bold mb-4 tracking-tight"
+        {/* Capabilities — 1 column, 6 rows */}
+        <motion.div
+          className="flex-1 w-full flex flex-col gap-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+          }}
+        >
+          {activities.map((activity) => (
+            <motion.div
+              key={activity.id}
+              className="flex items-center gap-4 px-5 py-4 group hover:bg-[#61eccd]/5 transition-colors duration-500 relative"
               style={{
-                fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: '20px',
+                background: 'rgba(13, 14, 15, 0.6)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(62, 207, 178, 0.15)',
               }}
+              variants={{
+                hidden: { opacity: 0, x: 24 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease } },
+              }}
+              whileHover={{ borderColor: 'rgba(62, 207, 178, 0.35)' }}
             >
-              {activity.title}
-            </h4>
+              {/* Icon box */}
+              <div
+                className="shrink-0 w-11 h-11 flex items-center justify-center"
+                style={{
+                  border: '1px solid rgba(62, 207, 178, 0.2)',
+                  background: 'rgba(62, 207, 178, 0.05)',
+                }}
+              >
+                <span
+                  className="material-symbols-outlined group-hover:scale-110 transition-transform"
+                  style={{ fontSize: '22px', color: '#61eccd' }}
+                >
+                  {activity.icon}
+                </span>
+              </div>
 
-            <p
-              className="text-sm leading-relaxed mb-6"
-              style={{
-                color: '#bbcac4',
-              }}
-            >
-              {activity.description}
-            </p>
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <h4
+                  className="font-bold mb-0.5 truncate"
+                  style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '15px' }}
+                >
+                  {activity.title}
+                </h4>
+                <p
+                  className="text-xs leading-relaxed line-clamp-2"
+                  style={{ color: '#bbcac4' }}
+                >
+                  {activity.description}
+                </p>
+              </div>
 
-            <div
-              className="w-full h-[1px] group-hover:bg-[#61eccd]/60 transition-colors"
-              style={{
-                background: 'rgba(62, 207, 178, 0.2)',
-              }}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
+              {/* Tag + ID */}
+              <div className="shrink-0 text-right hidden sm:block">
+                <div
+                  className="text-[9px] tracking-widest opacity-50 mb-1 uppercase"
+                  style={{ fontFamily: 'JetBrains Mono, monospace', color: '#61eccd' }}
+                >
+                  {activity.tag}
+                </div>
+                <div
+                  className="text-[9px] opacity-25"
+                  style={{ fontFamily: 'JetBrains Mono, monospace', color: '#61eccd' }}
+                >
+                  {activity.id}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
     </section>
   );
 }
